@@ -30,6 +30,9 @@ class PIDImpl
         bool _windup;
         double _pv_last;
         double _error;
+        double _Pout;
+        double _Iout;
+        double _Dout;
 };
 
 
@@ -62,7 +65,10 @@ PIDImpl::PIDImpl(double max, double min, double Kp, double Ki, double Kd ) :
 	_time_now(0),
 	_windup(false),
     _pv_last(0),
-    _error(0)
+    _error(0),
+    _Pout(0),
+    _Iout(0),
+    _Dout(0)
 {
 }
 
@@ -74,7 +80,7 @@ double PIDImpl::calculate( double setpoint, double pv )
     _error = setpoint - pv;
 
     // Proportional term
-    double Pout = _Kp * _error;
+    _Pout = _Kp * _error;
 
     // Integral term
     _dt = double(_time_now - _time_last)/CLOCKS_PER_SEC;
@@ -83,14 +89,19 @@ double PIDImpl::calculate( double setpoint, double pv )
     _integral += _error * _dt;
     }
 
-    double Iout = _Ki * _integral;
+    double _Iout = _Ki * _integral;
 
     // Derivative term
-    double derivative = (pv - _pv_last) / _dt;
-    double Dout = _Kd * derivative;
+    if (_dt > 0){
+    double derivative = (pv - _pv_last) / (_dt*100);
+    _Dout = _Kd * derivative;
+    }
+    else{
+    _Dout = 0;
+    }
 
     // Calculate total output
-    double output = Pout + Iout + Dout;
+    double output = _Pout + _Iout + _Dout;
 
     // Restrict to max/min
     if( output > _max ){

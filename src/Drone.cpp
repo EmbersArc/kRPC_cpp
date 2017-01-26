@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 
+
 using namespace std;
 using SpaceCenter = krpc::services::SpaceCenter;
 
@@ -65,8 +66,8 @@ PID LonGuidanceVelPID = PID(30,-30,2,0,0);
 double LatSpeedSP, LonSpeedSP;
 
 //lat and lon guidance adjustment P controller
-PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0,0);
-PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0,0);
+PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 double LatAdjust = 0, LonAdjust = 0;
 
 
@@ -82,21 +83,21 @@ SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
 
 
 //Rotational velocity control setup
-PID PitchVelControlPID 		= PID(1,	-1,	0.045,	0.03,	0);
-PID YawVelControlPID 		= PID(1,	-1,	0.045,	0.03,	0);
-PID RollVelControlPID 		= PID(0.3,	-0.3,	0.02,	0.02,		0);
+PID PitchVelControlPID 		= PID(3,	-3,	0.055,	0.045,	0.01);
+PID YawVelControlPID 		= PID(3,	-3,	0.055,	0.045,	0.01);
+PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
 float pitchVelSP, yawVelSP, rollVelSP;
 
 //Rotational torque control setup
-PID PitchTorqueControlPID	= PID(0.3,	-0.3,	0.3,	0,		0);
-PID YawTorqueControlPID		= PID(0.3,	-0.3,	0.3,	0,		0);
-PID RollTorqueControlPID	= PID(0.3,	-0.3,	0.3,	0,		0);
+PID PitchTorqueControlPID	= PID(0.5,	-0.5,	0.3,	0,		0);
+PID YawTorqueControlPID		= PID(0.5,	-0.5,	0.3,	0,		0);
+PID RollTorqueControlPID	= PID(0.5,	-0.5,	0.3,	0,		0);
 float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 //Altitude speed control setup
-PID VertSpeedControlPID		= PID(10,	-10,		1,		0,		0);
+PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
 float vertVelSP = 0;
-float alt1 = 300;
+float alt1 = 500;
 
 //Altitude throttle control setup
 PID ThrottleControlPID		= PID(1,	0.1,		0.15,	0.3,	0);
@@ -106,21 +107,16 @@ float thrott = 0;
 tuple<double, double, double> angVel_vessel;
 
 //Facing vectors converted to surface reference frame
-tuple<double, double, double> TopVector_surface;
-tuple<double, double, double> StarVector_surface;
-tuple<double, double, double> ForeVector_surface;
-tuple<double, double, double> attitudeError;
+tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
+
 
 krpc::services::Drawing dr(&conn);
 
 //retract gear
 if (vessel.parts().with_name("airbrake1")[0].control_surface().deployed() == true){
-
 	for (int i = 0; i<4 ; i++){
 		vessel.parts().with_name("airbrake1")[i].control_surface().set_deployed(false);
-
 	}
-
 }
 
 while (true){
@@ -152,7 +148,7 @@ while (true){
 
 	vessel.control().set_throttle(thrott);
 
-	midval = 0.8*thrott;
+
 
 	//get angular velocity vector
 	angVel_vessel = sc.transform_direction(angvel_stream(),ref_frame_nonrot,ref_frame_vessel);
@@ -161,6 +157,14 @@ while (true){
 	pitchAdjust = PitchTorqueControlPID.calculate(pitchVelSP, get<0>(angVel_vessel) ) / (thrott);
 	yawAdjust = YawTorqueControlPID.calculate(yawVelSP, get<2>(angVel_vessel) ) / (thrott);
 	rollAdjust = -RollTorqueControlPID.calculate(rollVelSP, get<1>(angVel_vessel) ) / (thrott);
+
+	//attitude correction priority
+	if( magnitude( make_tuple(get<0>(attitudeError),get<1>(attitudeError),0) ) > 30){
+		midval = 0;
+	}
+	else{
+		midval = 0.8*thrott;
+	}
 
 	//update thrust limits
 	AW1Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust + rollAdjust);
@@ -177,7 +181,9 @@ while (true){
 
 	LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 	LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
+	cout << "error:    " <<  magnitude( make_tuple(get<0>(attitudeError),get<1>(attitudeError),0) )  << endl;
 
 	}
+
 
 }
