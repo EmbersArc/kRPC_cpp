@@ -70,7 +70,6 @@ PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0,0);
 double LatAdjust = 0, LonAdjust = 0;
 
 
-
 ////Assign engines
 SpaceCenter::Part WD1Engine = vessel.parts().with_tag("WD1")[0];
 SpaceCenter::Part WD2Engine = vessel.parts().with_tag("WD2")[0];
@@ -80,7 +79,6 @@ SpaceCenter::Part SD1Engine = vessel.parts().with_tag("SD1")[0];
 SpaceCenter::Part SD2Engine = vessel.parts().with_tag("SD2")[0];
 SpaceCenter::Part AW1Engine = vessel.parts().with_tag("AW1")[0];
 SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
-
 
 
 //Rotational velocity control setup
@@ -112,8 +110,10 @@ tuple<double, double, double> TopVector_surface;
 tuple<double, double, double> StarVector_surface;
 tuple<double, double, double> ForeVector_surface;
 tuple<double, double, double> attitudeError;
+
 krpc::services::Drawing dr(&conn);
 
+//retract gear
 if (vessel.parts().with_name("airbrake1")[0].control_surface().deployed() == true){
 
 	for (int i = 0; i<4 ; i++){
@@ -179,8 +179,5 @@ while (true){
 	LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
 
 	}
-
-	
-
 
 }

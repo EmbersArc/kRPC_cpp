@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*h*h*h*hpp*hpp*hpp*hpp*h*hpp*hpp*hpp*hpp*hpp*h*hpp*hppfuture": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "chrono": "cpp",
+        "*hppchrono": "cpp"
     }
 }

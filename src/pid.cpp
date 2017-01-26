@@ -5,6 +5,7 @@
 #include <cmath>
 #include "pid.h"
 #include <ctime>
+#include <iostream>
 
 
 using namespace std;
@@ -67,29 +68,25 @@ PIDImpl::PIDImpl(double max, double min, double Kp, double Ki, double Kd ) :
 
 double PIDImpl::calculate( double setpoint, double pv )
 {
-
 	_time_now = clock();
 
     // Calculate error
-    if (pv != pv){
     _error = setpoint - pv;
-    }
-    else{
-    _error = setpoint - _pv_last;
-    }
 
     // Proportional term
     double Pout = _Kp * _error;
 
     // Integral term
     _dt = double(_time_now - _time_last)/CLOCKS_PER_SEC;
+
     if (_windup == false) {
     _integral += _error * _dt;
     }
+
     double Iout = _Ki * _integral;
 
     // Derivative term
-    double derivative = (pv-_pv_last) / _dt;
+    double derivative = (pv - _pv_last) / _dt;
     double Dout = _Kd * derivative;
 
     // Calculate total output

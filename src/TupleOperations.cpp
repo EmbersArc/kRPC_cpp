@@ -84,20 +84,29 @@ tuple<double,double,double> orientationError(
 	double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 
-		//compute attitude errors
+		//compute attitude errors and check for underflows
 		double pitchError = vectorAngle(ForeVector_surface,vectorReject(SetForeVector,StarVector_surface)) * 360/(2*pi);
 		if (vectorAngle(TopVector_surface,vectorReject(SetForeVector,StarVector_surface)) > pi/2 ){
 			pitchError *= -1;
+		}
+		if (pitchError != pitchError){
+			pitchError = 0;
 		}
 
 		double yawError = vectorAngle(ForeVector_surface,vectorReject(SetForeVector,TopVector_surface)) * 360/(2*pi);
 		if (vectorAngle(StarVector_surface,vectorReject(SetForeVector,TopVector_surface)) > pi/2 ){
 			yawError *= -1;
 		}
+		if (yawError != yawError){
+			yawError = 0;
+		}
 
 		double rollError = vectorAngle(TopVector_surface,vectorReject(SetTopVector,ForeVector_surface)) * 360/(2*pi);
 		if (vectorAngle(StarVector_surface,vectorReject(SetTopVector,ForeVector_surface)) > pi/2 ){
 			rollError *= -1;
+		}
+		if (rollError != rollError){
+			rollError = 0;
 		}
 
 		return make_tuple(pitchError,yawError,rollError);
