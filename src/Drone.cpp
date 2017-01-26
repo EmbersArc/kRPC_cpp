@@ -10,8 +10,11 @@
 
 
 
+
 using namespace std;
 using SpaceCenter = krpc::services::SpaceCenter;
+
+
 
 int main() {
 
@@ -83,15 +86,15 @@ SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
 
 
 //Rotational velocity control setup
-PID PitchVelControlPID 		= PID(3,	-3,	0.055,	0.045,	0.01);
-PID YawVelControlPID 		= PID(3,	-3,	0.055,	0.045,	0.01);
+PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
+PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
 PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
 float pitchVelSP, yawVelSP, rollVelSP;
 
 //Rotational torque control setup
-PID PitchTorqueControlPID	= PID(0.5,	-0.5,	0.3,	0,		0);
-PID YawTorqueControlPID		= PID(0.5,	-0.5,	0.3,	0,		0);
-PID RollTorqueControlPID	= PID(0.5,	-0.5,	0.3,	0,		0);
+PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
+PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.3,	0.05,		0);
+PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
 float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 //Altitude speed control setup
@@ -181,7 +184,10 @@ while (true){
 
 	LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 	LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
-	cout << "error:    " <<  magnitude( make_tuple(get<0>(attitudeError),get<1>(attitudeError),0) )  << endl;
+
+	// cout << chrono::duration_cast<chrono::milliseconds>(chrono::now.time_since_epoch()).count() << endl;
+
+
 
 	}
 

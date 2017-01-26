@@ -93,7 +93,7 @@ double PIDImpl::calculate( double setpoint, double pv )
 
     // Derivative term
     if (_dt > 0){
-    double derivative = (pv - _pv_last) / (_dt*100);
+    double derivative = (pv - _pv_last) / (_dt*50);
     _Dout = _Kd * derivative;
     }
     else{

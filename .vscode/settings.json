@@ -3,6 +3,16 @@
         "*h*h*h*hpp*hpp*hpp*hpp*h*hpp*hpp*hpp*hpp*hpp*h*hpp*hppfuture": "cpp",
         "future": "cpp",
         "chrono": "cpp",
-        "*hppchrono": "cpp"
+        "*hppchrono": "cpp",
+        "cmath": "cpp",
+        "ctime": "cpp",
+        "cstddef": "cpp",
+        "cstdlib": "cpp",
+        "cstdarg": "cpp",
+        "*h*h*h*h*h*h*h*hcwchar": "cpp",
+        "cstdint": "cpp",
+        "cstring": "cpp",
+        "*hcsignal": "cpp",
+        "iostream": "cpp"
     }
 }
