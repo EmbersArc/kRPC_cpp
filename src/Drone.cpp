@@ -8,31 +8,25 @@
 #include "TupleOperations.h"
 #include <stdio.h>
 
-
-
-
 using namespace std;
 using SpaceCenter = krpc::services::SpaceCenter;
 
-
-
 int main() {
 
-//establish connection
-krpc::Client conn = krpc::connect("N76VZ","192.168.1.116",50000,50001);
-krpc::services::KRPC krpc(&conn);
-SpaceCenter sc(&conn);
-SpaceCenter::Vessel vessel = sc.active_vessel();
+//CONNECTION
+	krpc::Client conn = krpc::connect("N76VZ","192.168.1.116",50000,50001);
+	krpc::services::KRPC krpc(&conn);
+	SpaceCenter sc(&conn);
+	SpaceCenter::Vessel vessel = sc.active_vessel();
 
-//reference and position
-SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
-SpaceCenter::ReferenceFrame ref_frame_orbit_body = vessel.orbit().body().reference_frame();
-SpaceCenter::ReferenceFrame ref_frame_nonrot = vessel.orbit().body().non_rotating_reference_frame();
-SpaceCenter::ReferenceFrame ref_frame_orb = vessel.orbital_reference_frame();
-SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
+//REFERENCE FRAMES
+	SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
+	SpaceCenter::ReferenceFrame ref_frame_orbit_body = vessel.orbit().body().reference_frame();
+	SpaceCenter::ReferenceFrame ref_frame_nonrot = vessel.orbit().body().non_rotating_reference_frame();
+	SpaceCenter::ReferenceFrame ref_frame_orb = vessel.orbital_reference_frame();
+	SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
 
 //OPEN ALL THE STREAMS
-
 	//stream velocity
 	krpc::Stream<tuple<double, double, double>> vel_stream = vessel.flight(ref_frame_orbit_body).velocity_stream();
 	tuple<double, double, double> velvec_surf;
@@ -48,80 +42,80 @@ SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
 	double lat1 = lat_stream();
 	double lon1 = lon_stream();
 
-	//stream pitch, yaw and roll
-	krpc::Stream<float> pitch_stream = vessel.flight().pitch_stream();
-	krpc::Stream<float> heading_stream = vessel.flight().heading_stream();
-	krpc::Stream<float> roll_stream = vessel.flight().roll_stream();
+
+//DEFINE VECTORS
+	//define facing vectors in in ref_frame_vessel
+	tuple<double, double, double> TopVector = make_tuple(0,0,-1);
+	tuple<double, double, double> ForeVector = make_tuple(0,1,0);
+	tuple<double, double, double> StarVector = make_tuple(1,0,0);
+
+	//define setpoint direction and TopVector in ref_frame_surf
+	tuple<double, double, double> SetForeVector = make_tuple(1,0,0);
+	tuple<double, double, double> SetTopVector = make_tuple(0,1,0);
+
+	//angular velocity vectors converted to vessel reference frame
+	tuple<double, double, double> angVel_vessel;
+
+	//Facing vectors converted to surface reference frame
+	tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
 
 
-//define facing vectors in in ref_frame_vessel
-tuple<double, double, double> TopVector = make_tuple(0,0,-1);
-tuple<double, double, double> ForeVector = make_tuple(0,1,0);
-tuple<double, double, double> StarVector = make_tuple(1,0,0);
+//PID CONTROLLERS
+	//lat and lon guidance velocity P controller
+	PID LatGuidanceVelPID = PID(30,-30,2,0,0);
+	PID LonGuidanceVelPID = PID(30,-30,2,0,0);
+	double LatSpeedSP, LonSpeedSP;
 
-//define setpoint direction and TopVector in ref_frame_surf
-tuple<double, double, double> SetForeVector = make_tuple(1,0,0);
-tuple<double, double, double> SetTopVector = make_tuple(0,1,0);
-
-//lat and lon guidance velocity P controller
-PID LatGuidanceVelPID = PID(30,-30,2,0,0);
-PID LonGuidanceVelPID = PID(30,-30,2,0,0);
-double LatSpeedSP, LonSpeedSP;
-
-//lat and lon guidance adjustment P controller
-PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
-PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
-double LatAdjust = 0, LonAdjust = 0;
+	//lat and lon guidance adjustment P controller
+	PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+	PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+	double LatAdjust = 0, LonAdjust = 0;
 
 
-////Assign engines
-SpaceCenter::Part WD1Engine = vessel.parts().with_tag("WD1")[0];
-SpaceCenter::Part WD2Engine = vessel.parts().with_tag("WD2")[0];
-SpaceCenter::Part AS1Engine = vessel.parts().with_tag("AS1")[0];
-SpaceCenter::Part AS2Engine = vessel.parts().with_tag("AS2")[0];
-SpaceCenter::Part SD1Engine = vessel.parts().with_tag("SD1")[0];
-SpaceCenter::Part SD2Engine = vessel.parts().with_tag("SD2")[0];
-SpaceCenter::Part AW1Engine = vessel.parts().with_tag("AW1")[0];
-SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
+	//Rotational velocity control setup
+	PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
+	PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
+	PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
+	float pitchVelSP, yawVelSP, rollVelSP;
+
+	//Rotational torque control setup
+	PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
+	PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.3,	0.05,		0);
+	PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
+	float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
+
+	//Altitude speed control setup
+	PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
+	float vertVelSP = 0;
+	float alt1 = 500;
+
+	//Altitude throttle control setup
+	PID ThrottleControlPID		= PID(1,	0.1,		0.15,	0.3,	0);
+	float thrott = 0;
 
 
-//Rotational velocity control setup
-PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
-PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
-PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
-float pitchVelSP, yawVelSP, rollVelSP;
 
-//Rotational torque control setup
-PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
-PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.3,	0.05,		0);
-PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
-float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
+//ASSIGN ENGINES
+	SpaceCenter::Part WD1Engine = vessel.parts().with_tag("WD1")[0];
+	SpaceCenter::Part WD2Engine = vessel.parts().with_tag("WD2")[0];
+	SpaceCenter::Part AS1Engine = vessel.parts().with_tag("AS1")[0];
+	SpaceCenter::Part AS2Engine = vessel.parts().with_tag("AS2")[0];
+	SpaceCenter::Part SD1Engine = vessel.parts().with_tag("SD1")[0];
+	SpaceCenter::Part SD2Engine = vessel.parts().with_tag("SD2")[0];
+	SpaceCenter::Part AW1Engine = vessel.parts().with_tag("AW1")[0];
+	SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
 
-//Altitude speed control setup
-PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
-float vertVelSP = 0;
-float alt1 = 500;
+//DRAWING
+	krpc::services::Drawing dr(&conn);
 
-//Altitude throttle control setup
-PID ThrottleControlPID		= PID(1,	0.1,		0.15,	0.3,	0);
-float thrott = 0;
-
-//angular velocity vectors converted to vessel reference frame
-tuple<double, double, double> angVel_vessel;
-
-//Facing vectors converted to surface reference frame
-tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
-
-
-krpc::services::Drawing dr(&conn);
-
-//retract gear
-if (vessel.parts().with_name("airbrake1")[0].control_surface().deployed() == true){
-	for (int i = 0; i<4 ; i++){
-		vessel.parts().with_name("airbrake1")[i].control_surface().set_deployed(false);
+//RETRACT GEAR
+	if (vessel.parts().with_name("airbrake1")[0].control_surface().deployed() == true){
+		for (int i = 0; i<4 ; i++){
+			vessel.parts().with_name("airbrake1")[i].control_surface().set_deployed(false);
+		}
 	}
-}
 
+//LOOP
 while (true){
 
 	SetForeVector = make_tuple(1,tan(LatAdjust),tan(LonAdjust));
@@ -186,10 +180,8 @@ while (true){
 	LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
 
 	// cout << chrono::duration_cast<chrono::milliseconds>(chrono::now.time_since_epoch()).count() << endl;
-
-
-
+	
 	}
-
-
+		
 }
+

@@ -13,6 +13,7 @@
         "cstdint": "cpp",
         "cstring": "cpp",
         "*hcsignal": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "iosfwd": "cpp"
     }
 }
