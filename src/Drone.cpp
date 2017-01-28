@@ -5,20 +5,28 @@
 	#include <krpc/services/space_center.hpp>
 	#include <krpc/services/ui.hpp>
 	#include <krpc/services/drawing.hpp>
+	#include <krpc/services/infernal_robotics.hpp>
 	#include "pid.h"
 	#include "TupleOperations.h"
 	#include <stdio.h>
 
 	using namespace std;
 	using SpaceCenter = krpc::services::SpaceCenter;
+	using InfernalRobotics = krpc::services::InfernalRobotics;
 
+	double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+
+
+//CONNECTION
+	krpc::Client conn = krpc::connect("N76VZ");
+	// krpc::services::KRPC krpc(&conn);
+	SpaceCenter sc(&conn);
+	krpc::services::Drawing dr(&conn);
+	krpc::services::InfernalRobotics ir(&conn);
+	SpaceCenter::Vessel vessel = sc.active_vessel();
+	
+			
 //VARIABLES SETUP
-	//CONNECTION
-		krpc::Client conn = krpc::connect("N76VZ");
-		// krpc::services::KRPC krpc(&conn);
-		SpaceCenter sc(&conn);
-		SpaceCenter::Vessel vessel = sc.active_vessel();
-
 	//REFERENCE FRAMES
 		SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
 		SpaceCenter::ReferenceFrame ref_frame_orbit_body = vessel.orbit().body().reference_frame();
@@ -35,6 +43,8 @@
 
 		//stream altitude
 		krpc::Stream<double> alt_stream = vessel.flight().mean_altitude_stream();
+		float alt0 = alt_stream();
+		float alt1;
 
 		//stream lat and lon
 		krpc::Stream<double> lat_stream = vessel.flight(ref_frame_orbit_body).latitude_stream();
@@ -87,10 +97,9 @@
 		//Altitude speed control setup
 		PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
 		float vertVelSP = 0;
-		float alt1 = 500;
 
 		//Altitude throttle control setup
-		PID ThrottleControlPID		= PID(1,	0.1,		0.15,	0.3,	0);
+		PID ThrottleControlPID		= PID(0.8,	0.1,		0.1,	0.2,	0);
 		float thrott = 0;
 
 
@@ -104,8 +113,11 @@
 			SpaceCenter::Part AW1Engine = vessel.parts().with_tag("AW1")[0];
 			SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
 
-		//DRAWING
-			krpc::services::Drawing dr(&conn);
+		//ASSIGN SERVOS
+			InfernalRobotics::ServoGroup servoGroupArm = ir.servo_group_with_name(vessel,"Arm");
+			InfernalRobotics::ServoGroup servoGroupClaw = ir.servo_group_with_name(vessel,"Claw");
+			InfernalRobotics::Servo servoArm = servoGroupArm.servo_with_name("ArmHinge");
+		
 //RETRACT GEAR FUNCTION
 	void retractGear(){
 
@@ -147,28 +159,27 @@
 		vertVelSP = VertSpeedControlPID.calculate(alt1,alt_stream());
 		thrott = ThrottleControlPID.calculate(vertVelSP,get<0>(velvec_surf));
 
-		vessel.control().set_throttle(thrott);
-
-
+		// vessel.control().set_throttle(thrott);
 
 		//get angular velocity vector
 		angVel_vessel = sc.transform_direction(angvel_stream(),ref_frame_nonrot,ref_frame_vessel);
 
 		//compute thrust limits
-		pitchAdjust = PitchTorqueControlPID.calculate(pitchVelSP, get<0>(angVel_vessel) ) / (thrott);
-		yawAdjust = YawTorqueControlPID.calculate(yawVelSP, get<2>(angVel_vessel) ) / (thrott);
-		rollAdjust = -RollTorqueControlPID.calculate(rollVelSP, get<1>(angVel_vessel) ) / (thrott);
+		pitchAdjust = PitchTorqueControlPID.calculate(pitchVelSP, get<0>(angVel_vessel) );
+		yawAdjust = YawTorqueControlPID.calculate(yawVelSP, get<2>(angVel_vessel) );
+		rollAdjust = -RollTorqueControlPID.calculate(rollVelSP, get<1>(angVel_vessel) );
 
 		//attitude correction priority
 		if( magnitude( make_tuple(get<0>(attitudeError),get<1>(attitudeError),0) ) > 30){
 			midval = 0;
 		}
 		else{
-			midval = 0.8*thrott;
+			midval = thrott;
 		}
 
 		//update thrust limits
 		AW1Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust + rollAdjust);
+		AW2Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust - rollAdjust);
 		AW2Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust - rollAdjust);
 		WD1Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust + rollAdjust);
 		WD2Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust - rollAdjust);
@@ -188,19 +199,28 @@
 		
 	}
 
-
-
-
-
 //MAIN FUNCTION
 	int main() {
 
 		retractGear();
 
+		vessel.control().set_throttle(1);
+
 		//LOOP
+		alt1 = 200;
+		while (alt_stream() < alt1-2){loop();}
+
+		servoGroupArm.move_next_preset();
+		servoGroupClaw.move_prev_preset();
+		VertSpeedControlPID.setKp(2);
+
 		while (true){
+			alt1 = 200 + 6*cos(abs(servoArm.position()) * pi / 180 );
 			loop();
-		}
+			cout << servoArm.position() << endl;
+			}
+
 
 	}
+	
 

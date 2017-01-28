@@ -5,13 +5,11 @@ class PIDImpl;
 class PID
 {
     public:
-        // Kp -  proportional gain
-        // Ki -  Integral gain
-        // Kd -  derivative gain
-        // dt -  loop interval time //removed because stupid
-        // max - maximum value of manipulated variable
-        // min - minimum value of manipulated variable
+        
         PID( double max, double min, double Kp, double Ki, double Kd );
+        void setKp(double newKp);
+        void setKi(double newKi);
+        void setKd(double newKd);
 
         // Returns the manipulated variable given a setpoint and current process value
         double calculate( double setpoint, double pv );
@@ -20,5 +18,6 @@ class PID
     private:
         PIDImpl *pimpl;
 };
+
 
 #endif

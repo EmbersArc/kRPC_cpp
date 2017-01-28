@@ -14,6 +14,9 @@ class PIDImpl
         PIDImpl( double max, double min, double Kp, double Ki, double Kd );
         ~PIDImpl();
         double calculate( double setpoint, double pv );
+        void setKp(double newKp);
+        void setKi(double newKi);
+        void setKd(double newKd);
 
     private:
         double _dt;
@@ -116,6 +119,27 @@ double PIDImpl::calculate( double setpoint, double pv )
     _time_last = _time_now;
 
     return output;
+}
+
+void PIDImpl::setKp(double newKp){
+    _Kp = newKp;
+}
+void PIDImpl::setKi(double newKi){
+    _Ki = newKi;
+}
+void PIDImpl::setKd(double newKd){
+    _Kd = newKd;
+}
+
+
+void PID::setKp(double newKp){
+    pimpl->setKp(newKp);
+}
+void PID::setKi(double newKi){
+    pimpl->setKp(newKi);
+}
+void PID::setKd(double newKd){
+    pimpl->setKp(newKd);
 }
 
 PIDImpl::~PIDImpl()
