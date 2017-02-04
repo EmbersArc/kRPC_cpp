@@ -1,15 +1,18 @@
 //INCLUDES AND STUFF	
 	#include <iostream>
+	#include <vector>
+	#include <stdio.h>
+	#include <unistd.h>
+
 	#include <krpc.hpp>
 	#include <krpc/services/krpc.hpp>
 	#include <krpc/services/space_center.hpp>
 	#include <krpc/services/ui.hpp>
 	#include <krpc/services/drawing.hpp>
 	#include <krpc/services/infernal_robotics.hpp>
+
 	#include "pid.h"
 	#include "TupleOperations.h"
-	#include <stdio.h>
-	#include <vector>
 
 	using namespace std;
 	using SpaceCenter = krpc::services::SpaceCenter;
@@ -19,14 +22,14 @@
 
 
 //CONNECTION
-	krpc::Client conn = krpc::connect("N76VZ");
+	krpc::Client conn = krpc::connect("N76VZ","192.168.1.116");
 	// krpc::services::KRPC krpc(&conn);
 	SpaceCenter sc(&conn);
 	krpc::services::Drawing dr(&conn);
 	krpc::services::InfernalRobotics ir(&conn);
-	SpaceCenter::Vessel vessel = sc.active_vessel();
+	SpaceCenter::Vessel vessel = sc.vessels()[2];
+	SpaceCenter::Vessel tarvessel = sc.vessels()[0];
 	
-			
 //VARIABLES SETUP
 	//REFERENCE FRAMES
 		SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
@@ -52,6 +55,7 @@
 		krpc::Stream<double> lon_stream = vessel.flight(ref_frame_orbit_body).longitude_stream();
 		double lat1 = lat_stream();
 		double lon1 = lon_stream();
+		bool lonoverride = false;
 
 
 	//DEFINE VECTORS
@@ -90,33 +94,36 @@
 		float pitchVelSP, yawVelSP, rollVelSP;
 
 		//Rotational torque control setup
-		PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
-		PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.3,	0.05,		0);
-		PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.3,	0.05,		0);
+		PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
+		PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.25,	0,		0);
+		PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
 		float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 		//Altitude speed control setup
-		PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
+		PID VertSpeedControlPID		= PID(40,	-40,		0.4,		0,		0);
 		float vertVelSP = 0;
 
 		//Altitude throttle control setup
-		PID ThrottleControlPID		= PID(0.8,	-0.8,		0.1,	0.2,	0);
+		PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
 		float thrott = 0;
+
+		//Arm acceleration torque compensation
+		PID ArmTorqueCompensationPID = PID(0.3,-0.3,	0,		0,		0.0012);
 
 
 		//ASSIGN ENGINES
 			SpaceCenter::Part WD1Engine = vessel.parts().with_tag("WD1")[0];
 			SpaceCenter::Part WD2Engine = vessel.parts().with_tag("WD2")[0];
-			SpaceCenter::Part WD3Engine = vessel.parts().with_tag("WD3")[0];
+			// SpaceCenter::Part WD3Engine = vessel.parts().with_tag("WD3")[0];
 			SpaceCenter::Part AS1Engine = vessel.parts().with_tag("AS1")[0];
 			SpaceCenter::Part AS2Engine = vessel.parts().with_tag("AS2")[0];
-			SpaceCenter::Part AS3Engine = vessel.parts().with_tag("AS3")[0];
+			// SpaceCenter::Part AS3Engine = vessel.parts().with_tag("AS3")[0];
 			SpaceCenter::Part SD1Engine = vessel.parts().with_tag("SD1")[0];
 			SpaceCenter::Part SD2Engine = vessel.parts().with_tag("SD2")[0];
-			SpaceCenter::Part SD3Engine = vessel.parts().with_tag("SD3")[0];
+			// SpaceCenter::Part SD3Engine = vessel.parts().with_tag("SD3")[0];
 			SpaceCenter::Part AW1Engine = vessel.parts().with_tag("AW1")[0];
 			SpaceCenter::Part AW2Engine = vessel.parts().with_tag("AW2")[0];
-			SpaceCenter::Part AW3Engine = vessel.parts().with_tag("AW3")[0];
+			// SpaceCenter::Part AW3Engine = vessel.parts().with_tag("AW3")[0];
 
 			vector<SpaceCenter::Engine> AllEngines = vessel.parts().engines();
 
@@ -138,6 +145,7 @@
 	}
 
 //START ENGINES FUNCTION
+
 	void startEngines(){	
 		for (int j = 0; j < int(AllEngines.size()) ; j++){
 			AllEngines[j].set_active(true);
@@ -145,12 +153,19 @@
 	}
 
 
+//DRAW FUNCTION
+	void draw(){
+		system("clear");
+				cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl;
+				cout <<  "Arm:  " << servoArm.position() << "  |  " << ArmTorqueCompensationPID.calculate(0,servoArm.current_speed()) << endl;
+	}
+
 //LOOP FUNCTION
 	void loop(){
 
 
 		SetForeVector = make_tuple(1,tan(LatAdjust),tan(LonAdjust));
-
+		SetTopVector = make_tuple(0,0,1);
 		velvec_surf = sc.transform_direction(vel_stream(),ref_frame_orbit_body,ref_frame_surf);
 
 		TopVector_surface = sc.transform_direction(TopVector,ref_frame_vessel,ref_frame_surf);
@@ -180,9 +195,9 @@
 		angVel_vessel = sc.transform_direction(angvel_stream(),ref_frame_nonrot,ref_frame_vessel);
 
 		//compute thrust limits
-		pitchAdjust = PitchTorqueControlPID.calculate(pitchVelSP, get<0>(angVel_vessel) );
-		yawAdjust = YawTorqueControlPID.calculate(yawVelSP, get<2>(angVel_vessel) );
-		rollAdjust = -RollTorqueControlPID.calculate(rollVelSP, get<1>(angVel_vessel) );
+		pitchAdjust = PitchTorqueControlPID.calculate(pitchVelSP, get<0>(angVel_vessel)) - ArmTorqueCompensationPID.calculate(0,servoArm.current_speed());
+		yawAdjust = YawTorqueControlPID.calculate(yawVelSP, get<2>(angVel_vessel));
+		rollAdjust = -RollTorqueControlPID.calculate(rollVelSP, get<1>(angVel_vessel));
 
 		//attitude correction priority
 		if( magnitude( make_tuple(get<0>(attitudeError),get<1>(attitudeError),0) ) > 30){
@@ -195,19 +210,24 @@
 		//update thrust limits
 		AW1Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust + rollAdjust);
 		AW2Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust - rollAdjust);
-		AW3Engine.engine().set_thrust_limit(-midval - pitchAdjust - yawAdjust);
+		// AW3Engine.engine().set_thrust_limit(-midval - pitchAdjust - yawAdjust);
 		WD1Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust + rollAdjust);
 		WD2Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust - rollAdjust);
-		WD3Engine.engine().set_thrust_limit(-midval - pitchAdjust + yawAdjust);
+		// WD3Engine.engine().set_thrust_limit(-midval - pitchAdjust + yawAdjust);
 		SD1Engine.engine().set_thrust_limit(midval - pitchAdjust - yawAdjust + rollAdjust);
 		SD2Engine.engine().set_thrust_limit(midval - pitchAdjust - yawAdjust - rollAdjust);
-		SD3Engine.engine().set_thrust_limit(-midval + pitchAdjust + yawAdjust);
+		// SD3Engine.engine().set_thrust_limit(-midval + pitchAdjust + yawAdjust);
 		AS1Engine.engine().set_thrust_limit(midval - pitchAdjust + yawAdjust + rollAdjust);
 		AS2Engine.engine().set_thrust_limit(midval - pitchAdjust + yawAdjust - rollAdjust);
-		AS3Engine.engine().set_thrust_limit(-midval + pitchAdjust - yawAdjust);
+		// AS3Engine.engine().set_thrust_limit(-midval + pitchAdjust - yawAdjust);
 
-		LatSpeedSP = 1000*LatGuidanceVelPID.calculate(lat1,lat_stream());
+		//Horizontal speed
+		if (lonoverride == false){
 		LonSpeedSP = 1000*LonGuidanceVelPID.calculate(lon1,lon_stream());
+		}else{
+		LonSpeedSP = -20;
+		}
+		LatSpeedSP = 1000*LatGuidanceVelPID.calculate(lat1,lat_stream());
 
 		LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 		LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
@@ -219,9 +239,10 @@
 
 //MAIN FUNCTION
 	int main() {
-
-			alt1 = 2000;
-
+			
+			alt1 = 80;
+			lat1 = tarvessel.flight(ref_frame_orbit_body).latitude() - 0.00015;§
+			double lon02 = tarvessel.flight(ref_frame_orbit_body).longitude();
 			vessel.control().set_throttle(1);
 			startEngines();
 			retractGear();
@@ -232,11 +253,22 @@
 			servoGroupArm.move_next_preset();
 			servoGroupClaw.move_prev_preset();
 
+			lonoverride = true;
+		while (abs(lon_stream() - lon02) > 0.0011){
+
+			draw();
+			loop();
+			
+			}
+				
+		servoArm.move_to(-70,50);
+		servoGroupClaw.move_next_preset();
+
 		while (true){
 
-			alt1 = 2000 + 6*cos(abs(servoArm.position()) * pi / 180 );
+			draw();
 			loop();
-			cout << servoArm.position() << endl;
+			
 			}
 
 	}
