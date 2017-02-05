@@ -17,5 +17,7 @@ tuple<double,double,double> orientationError(
 	tuple<double,double,double> TopVector_surface,
 	tuple<double,double,double> SetForeVector,
 	tuple<double,double,double> SetTopVector);
+tuple<double,double,double> normalize(tuple<double,double,double> vector);
+tuple<double,double,double> invert(tuple<double,double,double> vector);
 
 #endif

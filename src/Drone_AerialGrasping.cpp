@@ -4,6 +4,7 @@
 	#include <stdio.h>
 	#include <unistd.h>
 	#include <time.h>
+	#include <string>
 
 	#include <krpc.hpp>
 	#include <krpc/services/krpc.hpp>
@@ -91,13 +92,13 @@
 
 	//PID CONTROLLERS
 		//lat and lon guidance velocity P controller
-		PID LatGuidanceVelPID = PID(30,-30,2,0,0);
-		PID LonGuidanceVelPID = PID(30,-30,2,0,0);
+		PID LonVelGuidanceVelPID = PID(300,-300,2,0,0);
+		PID LatVelGuidanceVelPID = PID(300,-300,2,0,0);
 		double LatSpeedSP, LonSpeedSP;
 
 		//lat and lon guidance adjustment P controller
-		PID LatGuidanceAdjustPID = PID(1,-1,0.05,0.01,0);
-		PID LonGuidanceAdjustPID = PID(1,-1,0.05,0.01,0);
+		PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+		PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 		double LatAdjust = 0, LonAdjust = 0;
 
 
@@ -168,10 +169,25 @@
 
 
 //DRAW FUNCTION
-	void draw(){
-		system("clear");
-		cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl
-		<<  "Arm:       " << servoArm.position() << "  |  " << ArmTorqueCompensationPID.calculate(0,servoArm.current_speed()) << endl;
+	#include <unistd.h>
+	#include <term.h>
+
+	void clearscreen()
+	{
+	if (!cur_term)
+		{
+		int result;
+		setupterm( NULL, STDOUT_FILENO, &result );
+		if (result <= 0) return;
+		}
+
+	putp( tigetstr( "clear" ) );
+	}
+
+	void print(){
+		clearscreen();
+		cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl;
+		cout <<  "Arm:       " << servoArm.position() << "  |  " << ArmTorqueCompensationPID.calculate(0,servoArm.current_speed()) << endl;
 	}
 
 //LOOP FUNCTION
@@ -235,12 +251,12 @@
 
 		//Horizontal speed
 		if (lonVelOverride == 0){
-			LonSpeedSP = 1000*LonGuidanceVelPID.calculate(lon1,lon_stream());
+			LonSpeedSP = LonVelGuidanceVelPID.calculate(1000*lon1,1000*lon_stream());
 		}else{
 			LonSpeedSP = lonVelOverride;
 		}
 		if (latVelOverride == 0){
-			LatSpeedSP = 1000*LatGuidanceVelPID.calculate(lat1,lat_stream());
+			LatSpeedSP = LatVelGuidanceVelPID.calculate(1000*lat1,1000*lat_stream());
 		}else{
 			LatSpeedSP = latVelOverride;
 		}
@@ -248,11 +264,12 @@
 		LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 		LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
 
-		draw();
+		print();
 	}
 
 //MAIN FUNCTION
 	int main() {
+
 
 			SetTopVector = make_tuple(0,0,-1);
 			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 4.5;
@@ -261,6 +278,8 @@
 			vessel.control().set_throttle(1);
 			startEngines();
 			retractGear();
+			LatVelGuidanceVelPID.setKi(0);
+			LonVelGuidanceVelPID.setKi(0);
 
 		while (alt_stream() < alt1 - 2){loop();}
 
@@ -268,21 +287,23 @@
 			servoGroupClaw.move_prev_preset();
 
 			lonVelOverride = 40;
+
 		while (abs(lon_stream() - lon02) > 0.001){loop();}
 				
 			servoArm.move_to(-60,80);
 			servoGroupClaw.move_next_preset();
+			LatVelGuidanceVelPID.setKi(0);
+			LonVelGuidanceVelPID.setKi(0);
 
 		while (abs(lon_stream() - lon02) < 0.002){loop();}
 
 			servoArm.move_to(0,5);
 			lonVelOverride = 0;
-			alt1 = 150;
-			lat1 = lat_stream();
-			lon1 = lon_stream() + 0.01;
-			lonVelOverride = 30;
+			alt1 = 230;
+			lat1 = -1.51861;
+			lon1 = -71.8944;
 
-		while ( (abs(alt_stream() - alt1) > 0.2) || (abs(get<0>(velvec_surf)) > 0.5) ){loop();}
+		while ( (abs(lat_stream()-lat1) > 0.03 || abs(lon_stream()-lon1) > 0.03 || abs(alt_stream() - alt1) > 3)){loop();SetTopVector = invert(velvec_surf);}
 
 			servoGroupClaw.move_prev_preset();
 			time_t t0 = time(NULL);
@@ -293,7 +314,6 @@
 				tarvessel.parts().parachutes()[j].deploy();
 			}
 
-			lonVelOverride = 0;
 			lon1 = lon_stream();
 			lat1 = lat_stream();
 

@@ -136,10 +136,10 @@ void PID::setKp(double newKp){
     pimpl->setKp(newKp);
 }
 void PID::setKi(double newKi){
-    pimpl->setKp(newKi);
+    pimpl->setKi(newKi);
 }
 void PID::setKd(double newKd){
-    pimpl->setKp(newKd);
+    pimpl->setKd(newKd);
 }
 
 PIDImpl::~PIDImpl()

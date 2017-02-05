@@ -74,6 +74,7 @@ return acos(dotProduct(v1,v2)/(magnitude(v1)*magnitude(v2)));
 }
 
 tuple<double,double,double> orientationError(
+
 	tuple<double,double,double> ForeVector_surface,
 	tuple<double,double,double> StarVector_surface,
 	tuple<double,double,double> TopVector_surface,
@@ -112,5 +113,28 @@ tuple<double,double,double> orientationError(
 		return make_tuple(pitchError,yawError,rollError);
 
 	}
+
+tuple<double,double,double> normalize(tuple<double,double,double> vector){
+
+	double mag = magnitude(vector);
+
+	return make_tuple(
+		get<0>(vector)/mag,
+		get<1>(vector)/mag,
+		get<2>(vector)/mag
+		);
+}
+
+tuple<double,double,double> invert(tuple<double,double,double> vector){
+
+	return make_tuple(
+		-get<0>(vector),
+		-get<1>(vector),
+		-get<2>(vector)
+	);
+
+
+}
+
 
 #endif
