@@ -3,6 +3,7 @@
 	#include <vector>
 	#include <stdio.h>
 	#include <unistd.h>
+	#include <time.h>
 
 	#include <krpc.hpp>
 	#include <krpc/services/krpc.hpp>
@@ -27,8 +28,20 @@
 	SpaceCenter sc(&conn);
 	krpc::services::Drawing dr(&conn);
 	krpc::services::InfernalRobotics ir(&conn);
-	SpaceCenter::Vessel vessel = sc.vessels()[2];
-	SpaceCenter::Vessel tarvessel = sc.vessels()[0];
+		//VESSELNAMED FUNCTION
+
+			SpaceCenter::Vessel vessel_named(string name){
+				for (int j = 0; j < int(sc.vessels().size()) ; j++){
+					if (sc.vessels()[j].name() == name){
+						return sc.vessels()[j];
+					}
+				}
+				return sc.vessels()[0];
+				cout << "Ship " << name << "not found." << endl;
+			}
+
+	SpaceCenter::Vessel vessel = vessel_named("Drone2");
+	SpaceCenter::Vessel tarvessel = vessel_named("GrabThat Ship");
 	
 //VARIABLES SETUP
 	//REFERENCE FRAMES
@@ -55,7 +68,8 @@
 		krpc::Stream<double> lon_stream = vessel.flight(ref_frame_orbit_body).longitude_stream();
 		double lat1 = lat_stream();
 		double lon1 = lon_stream();
-		bool lonoverride = false;
+		double lonVelOverride = 0;
+		double latVelOverride = 0;
 
 
 	//DEFINE VECTORS
@@ -82,8 +96,8 @@
 		double LatSpeedSP, LonSpeedSP;
 
 		//lat and lon guidance adjustment P controller
-		PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
-		PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+		PID LatGuidanceAdjustPID = PID(1,-1,0.05,0.01,0);
+		PID LonGuidanceAdjustPID = PID(1,-1,0.05,0.01,0);
 		double LatAdjust = 0, LonAdjust = 0;
 
 
@@ -100,7 +114,7 @@
 		float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 		//Altitude speed control setup
-		PID VertSpeedControlPID		= PID(40,	-40,		0.4,		0,		0);
+		PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
 		float vertVelSP = 0;
 
 		//Altitude throttle control setup
@@ -156,8 +170,8 @@
 //DRAW FUNCTION
 	void draw(){
 		system("clear");
-				cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl;
-				cout <<  "Arm:  " << servoArm.position() << "  |  " << ArmTorqueCompensationPID.calculate(0,servoArm.current_speed()) << endl;
+		cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl
+		<<  "Arm:       " << servoArm.position() << "  |  " << ArmTorqueCompensationPID.calculate(0,servoArm.current_speed()) << endl;
 	}
 
 //LOOP FUNCTION
@@ -165,7 +179,7 @@
 
 
 		SetForeVector = make_tuple(1,tan(LatAdjust),tan(LonAdjust));
-		SetTopVector = make_tuple(0,0,1);
+		SetTopVector = SetTopVector;
 		velvec_surf = sc.transform_direction(vel_stream(),ref_frame_orbit_body,ref_frame_surf);
 
 		TopVector_surface = sc.transform_direction(TopVector,ref_frame_vessel,ref_frame_surf);
@@ -188,8 +202,6 @@
 		//vertical speed
 		vertVelSP = VertSpeedControlPID.calculate(alt1,alt_stream());
 		thrott = ThrottleControlPID.calculate(vertVelSP,get<0>(velvec_surf));
-
-		// vessel.control().set_throttle(thrott);
 
 		//get angular velocity vector
 		angVel_vessel = sc.transform_direction(angvel_stream(),ref_frame_nonrot,ref_frame_vessel);
@@ -222,54 +234,70 @@
 		// AS3Engine.engine().set_thrust_limit(-midval + pitchAdjust - yawAdjust);
 
 		//Horizontal speed
-		if (lonoverride == false){
-		LonSpeedSP = 1000*LonGuidanceVelPID.calculate(lon1,lon_stream());
+		if (lonVelOverride == 0){
+			LonSpeedSP = 1000*LonGuidanceVelPID.calculate(lon1,lon_stream());
 		}else{
-		LonSpeedSP = -20;
+			LonSpeedSP = lonVelOverride;
 		}
-		LatSpeedSP = 1000*LatGuidanceVelPID.calculate(lat1,lat_stream());
+		if (latVelOverride == 0){
+			LatSpeedSP = 1000*LatGuidanceVelPID.calculate(lat1,lat_stream());
+		}else{
+			LatSpeedSP = latVelOverride;
+		}
 
 		LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 		LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
 
-		// cout << chrono::duration_cast<chrono::milliseconds>(chrono::now.time_since_epoch()).count() << endl;
-		
-		
+		draw();
 	}
 
 //MAIN FUNCTION
 	int main() {
-			
-			alt1 = 80;
-			lat1 = tarvessel.flight(ref_frame_orbit_body).latitude() - 0.00015;§
+
+			SetTopVector = make_tuple(0,0,-1);
+			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 4.5;
+			lat1 = tarvessel.flight(ref_frame_orbit_body).latitude();
 			double lon02 = tarvessel.flight(ref_frame_orbit_body).longitude();
 			vessel.control().set_throttle(1);
 			startEngines();
 			retractGear();
-				VertSpeedControlPID.setKp(2);
 
 		while (alt_stream() < alt1 - 2){loop();}
 
-			servoGroupArm.move_next_preset();
+			servoArm.move_to(70,10);
 			servoGroupClaw.move_prev_preset();
 
-			lonoverride = true;
-		while (abs(lon_stream() - lon02) > 0.0011){
-
-			draw();
-			loop();
-			
-			}
+			lonVelOverride = 40;
+		while (abs(lon_stream() - lon02) > 0.001){loop();}
 				
-		servoArm.move_to(-70,50);
-		servoGroupClaw.move_next_preset();
+			servoArm.move_to(-60,80);
+			servoGroupClaw.move_next_preset();
 
-		while (true){
+		while (abs(lon_stream() - lon02) < 0.002){loop();}
 
-			draw();
-			loop();
-			
+			servoArm.move_to(0,5);
+			lonVelOverride = 0;
+			alt1 = 150;
+			lat1 = lat_stream();
+			lon1 = lon_stream() + 0.01;
+			lonVelOverride = 30;
+
+		while ( (abs(alt_stream() - alt1) > 0.2) || (abs(get<0>(velvec_surf)) > 0.5) ){loop();}
+
+			servoGroupClaw.move_prev_preset();
+			time_t t0 = time(NULL);
+
+		while (time(NULL)-t0 < 1){loop();}
+					
+			for (int j;j < int(tarvessel.parts().parachutes().size()); j++){
+				tarvessel.parts().parachutes()[j].deploy();
 			}
+
+			lonVelOverride = 0;
+			lon1 = lon_stream();
+			lat1 = lat_stream();
+
+		while (true){loop();}
 
 	}
 	
