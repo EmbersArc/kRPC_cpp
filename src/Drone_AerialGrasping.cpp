@@ -41,8 +41,8 @@
 				cout << "Ship " << name << "not found." << endl;
 			}
 
-	SpaceCenter::Vessel vessel = vessel_named("Drone2");
-	SpaceCenter::Vessel tarvessel = vessel_named("GrabThat Ship");
+	SpaceCenter::Vessel vessel = vessel_named("Drone Claw");
+	SpaceCenter::Vessel tarvessel = vessel_named("GrabThat Rocket Ship");
 	
 //VARIABLES SETUP
 	//REFERENCE FRAMES
@@ -115,7 +115,7 @@
 		float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 		//Altitude speed control setup
-		PID VertSpeedControlPID		= PID(40,	-40,		1,		0,		0);
+		PID VertSpeedControlPID		= PID(40,	-40,		0.7,		0,		0);
 		float vertVelSP = 0;
 
 		//Altitude throttle control setup
@@ -203,10 +203,10 @@
 		StarVector_surface = sc.transform_direction(StarVector,ref_frame_vessel,ref_frame_surf);
 
 
-		//debug drawing
-		dr.clear();
-		dr.add_direction(ForeVector_surface,ref_frame_surf,5,true);
-		dr.add_direction(SetForeVector,ref_frame_surf,8,true);
+		// //debug drawing
+		// dr.clear();
+		// dr.add_direction(ForeVector_surface,ref_frame_surf,5,true);
+		// dr.add_direction(SetForeVector,ref_frame_surf,8,true);
 
 		attitudeError = orientationError(ForeVector_surface,StarVector_surface,TopVector_surface,SetForeVector,SetTopVector);
 
@@ -264,57 +264,57 @@
 		LatAdjust = LatGuidanceAdjustPID.calculate(LatSpeedSP,get<1>(velvec_surf));
 		LonAdjust = LonGuidanceAdjustPID.calculate(LonSpeedSP,get<2>(velvec_surf));
 
-		print();
+		// print();
 	}
 
 //MAIN FUNCTION
 	int main() {
 
 
-			SetTopVector = make_tuple(0,0,-1);
-			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 4.5;
+			SetTopVector = make_tuple(0,0,1);
+			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 7.5;
 			lat1 = tarvessel.flight(ref_frame_orbit_body).latitude();
 			double lon02 = tarvessel.flight(ref_frame_orbit_body).longitude();
 			vessel.control().set_throttle(1);
 			startEngines();
 			retractGear();
-			LatVelGuidanceVelPID.setKi(0);
-			LonVelGuidanceVelPID.setKi(0);
 
-		while (alt_stream() < alt1 - 2){loop();}
+		while (alt_stream() < alt1 - 3){loop();}
 
+			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 4.5;
 			servoArm.move_to(70,10);
 			servoGroupClaw.move_prev_preset();
 
-			lonVelOverride = 40;
+			lonVelOverride = -40;
 
 		while (abs(lon_stream() - lon02) > 0.001){loop();}
 				
 			servoArm.move_to(-60,80);
 			servoGroupClaw.move_next_preset();
-			LatVelGuidanceVelPID.setKi(0);
-			LonVelGuidanceVelPID.setKi(0);
 
-		while (abs(lon_stream() - lon02) < 0.002){loop();}
+		while (abs(lon_stream() - lon02) < 0.004){loop();}
 
 			servoArm.move_to(0,5);
 			lonVelOverride = 0;
-			alt1 = 230;
-			lat1 = -1.51861;
-			lon1 = -71.8944;
+			alt1 = 200;
+			// lat1 = -1.51861; //island
+			// lon1 = -71.8944;
 
-		while ( (abs(lat_stream()-lat1) > 0.03 || abs(lon_stream()-lon1) > 0.03 || abs(alt_stream() - alt1) > 3)){loop();SetTopVector = invert(velvec_surf);}
+			lat1 = -0.112222 - 0.0015;
+			lon1 = -74.6422 - 0.5 + 0.0072;
+
+		while ((abs(lat_stream()-lat1) > 0.02 || abs(lon_stream()-lon1) > 0.525 || abs(alt_stream() - alt1) > 3)){loop();}
 
 			servoGroupClaw.move_prev_preset();
 			time_t t0 = time(NULL);
 
 		while (time(NULL)-t0 < 1){loop();}
-					
-			for (int j;j < int(tarvessel.parts().parachutes().size()); j++){
+
+			for (int j = 0;j < int(tarvessel.parts().parachutes().size()); j++){
 				tarvessel.parts().parachutes()[j].deploy();
 			}
 
-			lon1 = lon_stream();
+			lon1 = lon_stream() - 0.5;
 			lat1 = lat_stream();
 
 		while (true){loop();}
