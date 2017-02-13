@@ -5,6 +5,8 @@
 	#include <unistd.h>
 	#include <time.h>
 	#include <string>
+	#include <cmath>
+
 
 	#include <krpc.hpp>
 	#include <krpc/services/krpc.hpp>
@@ -22,8 +24,7 @@
 
 
 //CONNECTION
-	krpc::Client conn = krpc::connect("N76VZ","192.168.1.116");
-	// krpc::services::KRPC krpc(&conn);
+	krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
 	SpaceCenter sc(&conn);
 	krpc::services::Drawing dr(&conn);
 		//VESSELNAMED FUNCTION
@@ -38,7 +39,7 @@
 				cout << "Ship " << name << "not found." << endl;
 			}
 
-	SpaceCenter::Vessel vessel = vessel_named("Drone");
+	SpaceCenter::Vessel vessel = vessel_named("Drone Pendulum");
 	SpaceCenter::Vessel tarvessel = vessel_named("Drone");
 	
 //VARIABLES SETUP
@@ -48,6 +49,9 @@
 		SpaceCenter::ReferenceFrame ref_frame_nonrot = vessel.orbit().body().non_rotating_reference_frame();
 		SpaceCenter::ReferenceFrame ref_frame_orb = vessel.orbital_reference_frame();
 		SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
+
+		int parts0 = vessel.parts().all().size();
+
 
 	//OPEN ALL THE STREAMS
 		//stream velocity
@@ -94,15 +98,14 @@
 		double LatSpeedSP, LonSpeedSP;
 
 		//lat and lon guidance adjustment P controller
-		PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0.04);
-		PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0.04);
+		PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
+		PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
 		double LatAdjust = 0, LonAdjust = 0;
 		double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
 
-
 		//Rotational velocity control setup
-		PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
-		PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
+		PID PitchVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
+		PID YawVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
 		PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
 		float pitchVelSP, yawVelSP, rollVelSP;
 
@@ -119,10 +122,6 @@
 		//Altitude throttle control setup
 		PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
 		float thrott = 0;
-
-		//Arm acceleration torque compensation
-		PID ArmTorqueCompensationPID = PID(0.3,-0.3,	0,		0,		0.0012);
-
 
 		//ASSIGN ENGINES
 			SpaceCenter::Part WD1Engine = vessel.parts().with_tag("WD1")[0];
@@ -180,11 +179,14 @@
 	void print(){
 		clearscreen();
 		cout <<  "Altitude:  " << alt1 << "  |  " << alt_stream() << endl;
-		cout << LatSpeedAdjust << "  |  " << LonSpeedAdjust << endl;
 	}
 
 //LOOP FUNCTION
 	void loop(){
+
+		if (parts0 > int(vessel.parts().all().size())){
+			sc.quickload();
+			}
 
 
 		SetForeVector = make_tuple(1,tan(LatAdjust),tan(LonAdjust));
@@ -260,12 +262,14 @@
 		print();
 	}
 
+
+
 //MAIN FUNCTION
 	int main() {
 
 
-			PID PendulumPID_lat = PID(20,-20,4,2,0.5);
-			PID PendulumPID_lon = PID(20,-20,4,2,0.5);
+			PID PendulumPID_lat = PID(40,-40,4,2,0);
+			PID PendulumPID_lon = PID(40,-40,4,2,0);
 
 			SetTopVector = make_tuple(0,0,-1);
 			alt1 = tarvessel.flight(ref_frame_orbit_body).mean_altitude() + 4.5;
@@ -275,19 +279,20 @@
 			retractGear();
 			alt1 = 100;
 
-			
-
-		while (alt_stream()<98){loop();}
+		while (alt_stream()<94){loop();}
 
 			vessel.parts().docking_ports()[0].undock();
-			tarvessel = vessel_named("Drone Probe");
+			parts0 = vessel.parts().all().size();
+
+			tarvessel = vessel_named("Drone Pendulum Probe");
 			krpc::Stream<double> lat_stream_tar = tarvessel.flight(ref_frame_orbit_body).latitude_stream();
 			krpc::Stream<double> lon_stream_tar = tarvessel.flight(ref_frame_orbit_body).longitude_stream();
 
 		while (true){
-			LatSpeedAdjust = -PendulumPID_lat.calculate(10000*lat_stream(),10000*lat_stream_tar());
-			LonSpeedAdjust = -PendulumPID_lon.calculate(10000*lon_stream(),10000*lon_stream_tar());
-			loop();}
+			latVelOverride = -PendulumPID_lat.calculate(10000*lat_stream(),10000*lat_stream_tar());
+			lonVelOverride = -PendulumPID_lon.calculate(10000*lon_stream(),10000*lon_stream_tar());
+			loop();
+			}
 
 	}
 	
