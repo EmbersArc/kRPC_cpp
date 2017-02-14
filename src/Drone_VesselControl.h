@@ -11,18 +11,16 @@
 #include "TupleOperations.h"
 
 using namespace std;
-
+			
 
 class VesselControl{
-	
-	public:
 
+	public:
 		VesselControl(string name);
 		void retractGear();
 		void startEngines();
 		void loop();
 		~VesselControl();
-
 		krpc::services::SpaceCenter::Vessel vessel;
 		int parts0;
 		
@@ -97,6 +95,7 @@ class VesselControl{
 			PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
 			float thrott = 0;
 
+			//Engines
 			krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
 
 

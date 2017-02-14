@@ -1,24 +1,122 @@
-#ifndef _DRONE_VESSELCONTROL_SOURCE_
-#define _DRONE_VESSELCONTROL_SOURCE_
+#include <cmath>
+#include <iostream>
 
-#include "Drone_VesselControl.h"
+#include <krpc.hpp>
+#include <krpc/services/space_center.hpp>
+
+#include "pid.h"
+#include "TupleOperations.h"
+
 using namespace std;
 
-    krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
-    krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
+	krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
+	krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
+
+
+class VesselControl{
+
+	public:
+		VesselControl(string name);
+		void retractGear();
+		void startEngines();
+		void loop();
+		~VesselControl();
+		krpc::services::SpaceCenter::Vessel vessel;
+
+		//STREAMS
+			krpc::Stream<tuple<double, double, double>> vel_stream;
+			tuple<double, double, double> velvec_surf;
+			//stream angular velocity
+			krpc::Stream<tuple<double, double, double>> angvel_stream;
+
+			//stream altitude
+			krpc::Stream<double> alt_stream;
+			float alt0 = alt_stream();
+			float alt1;
+
+			//stream lat and lon
+			krpc::Stream<double> lat_stream;
+			krpc::Stream<double> lon_stream;
+			double lat0;
+			double lon0;
+			double lat1;
+			double lon1;
+			double lonVelOverride = 0;
+			double latVelOverride = 0;
+
+		//DEFINE VECTORS
+			//define facing vectors in in ref_frame_vessel
+			tuple<double, double, double> TopVector = make_tuple(0,0,-1);
+			tuple<double, double, double> ForeVector = make_tuple(0,1,0);
+			tuple<double, double, double> StarVector = make_tuple(1,0,0);
+
+			//define setpoint direction and TopVector in ref_frame_surf
+			tuple<double, double, double> SetForeVector = make_tuple(1,0,0);
+			tuple<double, double, double> SetTopVector = make_tuple(0,1,0);
+
+			//angular velocity vectors converted to vessel reference frame
+			tuple<double, double, double> angVel_vessel;
+
+			//Facing vectors converted to surface reference frame
+			tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
+
+
+		//PID CONTROLLERS
+			//lat and lon guidance velocity P controller
+			PID LonVelGuidanceVelPID = PID(300,-300,2,0,0);
+			PID LatVelGuidanceVelPID = PID(300,-300,2,0,0);
+			double LatSpeedSP, LonSpeedSP;
+
+			//lat and lon guidance adjustment P controller
+			PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
+			PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
+			double LatAdjust = 0 , LonAdjust = 0;
+			double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
+
+			//Rotational velocity control setup
+			PID PitchVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
+			PID YawVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
+			PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
+			float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
+
+			//Rotational torque control setup
+			PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
+			PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.25,	0,		0);
+			PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
+			float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
+
+			//Altitude speed control setup
+			PID VertSpeedControlPID		= PID(40,	-40,		0.5,		0,		0);
+			float vertVelSP = 0;
+
+			//Altitude throttle control setup
+			PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
+			float thrott = 0;
+
+			//Engines
+			krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
+
+
+		private:
+			//REFERENCE FRAMES
+			krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
+			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orbit_body;
+			krpc::services::SpaceCenter::ReferenceFrame ref_frame_nonrot;
+			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orb;
+			krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel;
+
+};
+
 
 VesselControl::VesselControl(string name){
 
 		cout << "searching for vessel" << endl;
-		
+
 		for (int j = 0; j < int(sct.vessels().size()) ; j++){
 			if (sct.vessels()[j].name() == name){
 				vessel = sct.vessels()[j];
 			}
 		}
-
-		parts0 = vessel.parts().all().size();
-
 
 	//OPEN ALL THE STREAMS
 		//stream velocity
@@ -84,12 +182,6 @@ void VesselControl::loop(){
 		ForeVector_surface = sct.transform_direction(ForeVector,ref_frame_vessel,ref_frame_surf);
 		StarVector_surface = sct.transform_direction(StarVector,ref_frame_vessel,ref_frame_surf);
 
-
-		// //debug drawing
-		// dr.clear();
-		// dr.add_direction(ForeVector_surface,ref_frame_surf,5,true);
-		// dr.add_direction(SetForeVector,ref_frame_surf,8,true);
-
 		attitudeError = orientationError(ForeVector_surface,StarVector_surface,TopVector_surface,SetForeVector,SetTopVector);
 
 		pitchVelSP = PitchVelControlPID.calculate(0,get<0>(attitudeError));
@@ -152,5 +244,24 @@ VesselControl::~VesselControl(){
 		lon_stream.remove();
 }
 
-	
-#endif
+
+
+int main() {
+
+
+
+    cout << "started" << endl;		
+
+    VesselControl Vessel1 = VesselControl("Drone");
+
+    cout << "assigend vessel" << endl;
+
+Vessel1.startEngines();
+
+    while (true){
+        
+        Vessel1.loop() ;
+    }
+
+}
+
