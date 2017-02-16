@@ -4,21 +4,24 @@
 #include "Drone_VesselControl.h"
 using namespace std;
 
-    krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
-    krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
+
+	krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
+	krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
 VesselControl::VesselControl(string name){
 
-		cout << "searching for vessel" << endl;
-		
 		for (int j = 0; j < int(sct.vessels().size()) ; j++){
 			if (sct.vessels()[j].name() == name){
 				vessel = sct.vessels()[j];
 			}
 		}
 
-		parts0 = vessel.parts().all().size();
-
+	//REFERENCE FRAMES
+		ref_frame_surf = vessel.surface_reference_frame();
+		ref_frame_orbit_body = vessel.orbit().body().reference_frame();
+		ref_frame_nonrot = vessel.orbit().body().non_rotating_reference_frame();
+		ref_frame_orb = vessel.orbital_reference_frame();
+		ref_frame_vessel = vessel.reference_frame();
 
 	//OPEN ALL THE STREAMS
 		//stream velocity
@@ -49,12 +52,7 @@ VesselControl::VesselControl(string name){
 		AW1Engine = vessel.parts().with_tag("AW1")[0];
 		AW2Engine = vessel.parts().with_tag("AW2")[0];
 
-		//REFERENCE FRAMES
-		ref_frame_surf = vessel.surface_reference_frame();
-		ref_frame_orbit_body = vessel.orbit().body().reference_frame();
-		ref_frame_nonrot = vessel.orbit().body().non_rotating_reference_frame();
-		ref_frame_orb = vessel.orbital_reference_frame();
-		ref_frame_vessel = vessel.reference_frame();
+
 
 }
 
@@ -84,18 +82,11 @@ void VesselControl::loop(){
 		ForeVector_surface = sct.transform_direction(ForeVector,ref_frame_vessel,ref_frame_surf);
 		StarVector_surface = sct.transform_direction(StarVector,ref_frame_vessel,ref_frame_surf);
 
-
-		// //debug drawing
-		// dr.clear();
-		// dr.add_direction(ForeVector_surface,ref_frame_surf,5,true);
-		// dr.add_direction(SetForeVector,ref_frame_surf,8,true);
-
 		attitudeError = orientationError(ForeVector_surface,StarVector_surface,TopVector_surface,SetForeVector,SetTopVector);
 
 		pitchVelSP = PitchVelControlPID.calculate(0,get<0>(attitudeError));
 		yawVelSP = YawVelControlPID.calculate(0,get<1>(attitudeError));
 		rollVelSP = RollVelControlPID.calculate(0,get<2>(attitudeError));
-
 
 		//vertical speed
 		vertVelSP = VertSpeedControlPID.calculate(alt1,alt_stream());
@@ -151,6 +142,7 @@ VesselControl::~VesselControl(){
 		lat_stream.remove();
 		lon_stream.remove();
 }
+
 
 	
 #endif

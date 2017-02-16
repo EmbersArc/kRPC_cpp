@@ -22,8 +22,6 @@ class VesselControl{
 		void loop();
 		~VesselControl();
 		krpc::services::SpaceCenter::Vessel vessel;
-		int parts0;
-		
 
 		//STREAMS
 			krpc::Stream<tuple<double, double, double>> vel_stream;
@@ -33,8 +31,8 @@ class VesselControl{
 
 			//stream altitude
 			krpc::Stream<double> alt_stream;
-			float alt0 = alt_stream();
 			float alt1;
+			float alt0;
 
 			//stream lat and lon
 			krpc::Stream<double> lat_stream;
@@ -47,21 +45,9 @@ class VesselControl{
 			double latVelOverride = 0;
 
 		//DEFINE VECTORS
-			//define facing vectors in in ref_frame_vessel
-			tuple<double, double, double> TopVector = make_tuple(0,0,-1);
-			tuple<double, double, double> ForeVector = make_tuple(0,1,0);
-			tuple<double, double, double> StarVector = make_tuple(1,0,0);
-
 			//define setpoint direction and TopVector in ref_frame_surf
 			tuple<double, double, double> SetForeVector = make_tuple(1,0,0);
 			tuple<double, double, double> SetTopVector = make_tuple(0,1,0);
-
-			//angular velocity vectors converted to vessel reference frame
-			tuple<double, double, double> angVel_vessel;
-
-			//Facing vectors converted to surface reference frame
-			tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
-
 
 		//PID CONTROLLERS
 			//lat and lon guidance velocity P controller
@@ -95,17 +81,29 @@ class VesselControl{
 			PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
 			float thrott = 0;
 
-			//Engines
-			krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
-
 
 		private:
+			
+			//define facing vectors in in ref_frame_vessel
+			tuple<double, double, double> TopVector = make_tuple(0,0,-1);
+			tuple<double, double, double> ForeVector = make_tuple(0,1,0);
+			tuple<double, double, double> StarVector = make_tuple(1,0,0);
+
+			//angular velocity vectors converted to vessel reference frame
+			tuple<double, double, double> angVel_vessel;
+
+			//Facing vectors converted to surface reference frame
+			tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
+
 			//REFERENCE FRAMES
 			krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
 			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orbit_body;
 			krpc::services::SpaceCenter::ReferenceFrame ref_frame_nonrot;
 			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orb;
 			krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel;
+
+			//Engines
+			krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
 
 };
 

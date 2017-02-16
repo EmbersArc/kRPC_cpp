@@ -7,7 +7,8 @@
     "args": [
     "${workspaceRoot}/src/TupleOperations.cpp",       
     "${workspaceRoot}/src/pid.cpp",
-    "${workspaceRoot}/src/Allinone.cpp", 
+    "${workspaceRoot}/src/Drone_VesselControl.cpp",
+    "${workspaceRoot}/src/Main.cpp", 
     "-std=c++11", "-lkrpc","-lprotobuf","-lcurses",
     "-Wall"],
     "showOutput": "always"
