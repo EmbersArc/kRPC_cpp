@@ -2,7 +2,6 @@
 #define _DRONE_VESSELCONTROL_H_
 
 #include <cmath>
-#include <iostream>
 
 #include <krpc.hpp>
 #include <krpc/services/space_center.hpp>
@@ -56,14 +55,14 @@ class VesselControl{
 			double LatSpeedSP, LonSpeedSP;
 
 			//lat and lon guidance adjustment P controller
-			PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
-			PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.25,0.05,0);
+			PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
+			PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 			double LatAdjust = 0 , LonAdjust = 0;
 			double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
 
 			//Rotational velocity control setup
-			PID PitchVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
-			PID YawVelControlPID 		= PID(3,	-3,	0.055,	0.015,	0);
+			PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
+			PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
 			PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
 			float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
 
@@ -74,7 +73,7 @@ class VesselControl{
 			float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 			//Altitude speed control setup
-			PID VertSpeedControlPID		= PID(40,	-40,		0.5,		0,		0);
+			PID VertSpeedControlPID		= PID(40,	-40,		0.7,		0,		0);
 			float vertVelSP = 0;
 
 			//Altitude throttle control setup
