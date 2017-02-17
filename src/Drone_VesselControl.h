@@ -36,10 +36,10 @@ class VesselControl{
 			//stream lat and lon
 			krpc::Stream<double> lat_stream;
 			krpc::Stream<double> lon_stream;
-			double lat0;
-			double lon0;
 			double lat1;
 			double lon1;
+			double lat0;
+			double lon0;
 			double lonVelOverride = 0;
 			double latVelOverride = 0;
 
@@ -52,37 +52,43 @@ class VesselControl{
 			//lat and lon guidance velocity P controller
 			PID LonVelGuidanceVelPID = PID(300,-300,2,0,0);
 			PID LatVelGuidanceVelPID = PID(300,-300,2,0,0);
-			double LatSpeedSP, LonSpeedSP;
 
 			//lat and lon guidance adjustment P controller
 			PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 			PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
-			double LatAdjust = 0 , LonAdjust = 0;
-			double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
+
 
 			//Rotational velocity control setup
 			PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
 			PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
 			PID RollVelControlPID 		= PID(2,	-2,	0.02,	0.02,	0);
-			float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
 
 			//Rotational torque control setup
 			PID PitchTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
 			PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.25,	0,		0);
 			PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
-			float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
 
 			//Altitude speed control setup
 			PID VertSpeedControlPID		= PID(40,	-40,		0.7,		0,		0);
-			float vertVelSP = 0;
+			
 
 			//Altitude throttle control setup
 			PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
-			float thrott = 0;
+			
 
 
 		private:
-			
+		
+			double LatSpeedSP, LonSpeedSP;
+
+			double LatAdjust = 0 , LonAdjust = 0;
+			double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
+
+			float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
+			float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
+			float vertVelSP = 0;
+			float thrott = 0;
+
 			//define facing vectors in in ref_frame_vessel
 			tuple<double, double, double> TopVector = make_tuple(0,0,-1);
 			tuple<double, double, double> ForeVector = make_tuple(0,1,0);
