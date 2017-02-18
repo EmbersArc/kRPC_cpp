@@ -1,5 +1,6 @@
 #ifndef _DRONE_VESSELCONTROL_H_
 #define _DRONE_VESSELCONTROL_H_
+#include <iostream>
 
 #include <cmath>
 
@@ -11,6 +12,7 @@
 
 using namespace std;
 			
+void launchVessel(string vesselname);
 
 class VesselControl{
 

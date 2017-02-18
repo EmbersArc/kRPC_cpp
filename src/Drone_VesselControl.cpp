@@ -8,7 +8,14 @@ using namespace std;
 	krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
 	krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
+void launchVessel(string vesselname){
+    sct.launch_vessel("VAB",vesselname,"LanchPad");
+}
+
 VesselControl::VesselControl(string name){
+
+	cout << "Searching for vessel named " << name << endl;
+
 
 		for (int j = 0; j < int(sct.vessels().size()) ; j++){
 			if (sct.vessels()[j].name() == name){
@@ -52,6 +59,7 @@ VesselControl::VesselControl(string name){
 		AW1Engine = vessel.parts().with_tag("AW1")[0];
 		AW2Engine = vessel.parts().with_tag("AW2")[0];
 
+		cout << vessel.name() << " successfully created." << endl;
 
 
 }
