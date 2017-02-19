@@ -5,11 +5,15 @@
 using namespace std;
 
 
-	krpc::Client conn = krpc::connect("N76VZ","10.0.2.2");
-	krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
+krpc::Client conn = krpc::connect("VM","10.0.2.2");
+krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
 void launchVessel(string vesselname){
     sct.launch_vessel("VAB",vesselname,"LanchPad");
+}
+
+krpc::services::SpaceCenter ReturnSpaceCenter(){
+	return sct;
 }
 
 VesselControl::VesselControl(string name){

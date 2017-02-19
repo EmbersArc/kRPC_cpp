@@ -11,8 +11,9 @@
 #include "TupleOperations.h"
 
 using namespace std;
-			
+	
 void launchVessel(string vesselname);
+krpc::services::SpaceCenter ReturnSpaceCenter();
 
 class VesselControl{
 
