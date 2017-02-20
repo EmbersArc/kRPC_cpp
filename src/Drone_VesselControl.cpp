@@ -5,14 +5,14 @@
 using namespace std;
 
 
+
 krpc::Client conn = krpc::connect("VM","10.0.2.2");
 krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
-void launchVessel(string vesselname){
-    sct.launch_vessel("VAB",vesselname,"LanchPad");
-}
+//stream time
+krpc::Stream<double> t_stream = sct.ut_stream();
 
-krpc::services::SpaceCenter ReturnSpaceCenter(){
+krpc::services::SpaceCenter& ReturnSpaceCenter(){
 	return sct;
 }
 
@@ -148,6 +148,7 @@ void VesselControl::loop(){
 }
 
 VesselControl::~VesselControl(){
+		t_stream.remove();
 		vel_stream.remove();
 		angvel_stream.remove();
 		alt_stream.remove();

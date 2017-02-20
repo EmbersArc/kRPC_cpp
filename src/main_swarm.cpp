@@ -8,7 +8,7 @@ using namespace std;
 
 int main() {
 
-    krpc::services::SpaceCenter sct = ReturnSpaceCenter();
+    // krpc::services::SpaceCenter sct = ReturnSpaceCenter();
 
 
     unsigned int vesselNumber = 6;

@@ -12,8 +12,7 @@
 
 using namespace std;
 	
-void launchVessel(string vesselname);
-krpc::services::SpaceCenter ReturnSpaceCenter();
+krpc::services::SpaceCenter& ReturnSpaceCenter();
 
 class VesselControl{
 
@@ -33,16 +32,13 @@ class VesselControl{
 
 			//stream altitude
 			krpc::Stream<double> alt_stream;
-			float alt1;
-			float alt0;
+			float alt0, alt1;
 
 			//stream lat and lon
 			krpc::Stream<double> lat_stream;
 			krpc::Stream<double> lon_stream;
-			double lat1;
-			double lon1;
-			double lat0;
-			double lon0;
+			double lat0, lat1;
+			double lon0, lon1;
 			double lonVelOverride = 0;
 			double latVelOverride = 0;
 
