@@ -6,7 +6,7 @@ using namespace std;
 
 
 
-krpc::Client conn = krpc::connect("VM","10.0.2.2");
+krpc::Client conn = krpc::connect("VM","192.168.56.1");
 krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
 //stream time

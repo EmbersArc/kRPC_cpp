@@ -77,7 +77,6 @@ class VesselControl{
 
 
 		private:
-		
 			double LatSpeedSP, LonSpeedSP;
 
 			double LatAdjust = 0 , LonAdjust = 0;
