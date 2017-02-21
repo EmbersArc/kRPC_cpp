@@ -8,7 +8,7 @@
     "${workspaceRoot}/src/TupleOperations.cpp",       
     "${workspaceRoot}/src/pid.cpp",
     "${workspaceRoot}/src/Drone_VesselControl.cpp",
-    "${workspaceRoot}/src/main_HugeDrone.cpp", 
+    "${workspaceRoot}/src/main_swarm.cpp", 
     "-std=c++11", "-lkrpc","-lprotobuf","-lcurses",
     "-Wall"],
     "showOutput": "always"

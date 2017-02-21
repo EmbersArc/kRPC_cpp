@@ -1,7 +1,6 @@
 #ifndef _PID_SOURCE_
 #define _PID_SOURCE_
 
-
 #include <cmath>
 #include <ctime>
 #include "pid.h"
