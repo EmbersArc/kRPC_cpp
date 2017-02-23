@@ -12,7 +12,7 @@
 
 using namespace std;
 	
-krpc::services::SpaceCenter& ReturnSpaceCenter();
+krpc::services::SpaceCenter::Vessel findVessel(string name);
 
 class VesselControl{
 
@@ -67,12 +67,12 @@ class VesselControl{
 			PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.25,	0,		0);
 			PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
 
+
 			//Altitude speed control setup
 			PID VertSpeedControlPID		= PID(40,	-40,		0.7,		0,		0);
 			
-
 			//Altitude throttle control setup
-			PID ThrottleControlPID		= PID(0.8,	0,		0.1,	0.2,	0);
+			PID ThrottleControlPID		= PID(0.8,	0,		0.15,	0.3,	0);
 			
 
 

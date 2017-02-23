@@ -4,28 +4,19 @@
 #include "Drone_VesselControl.h"
 using namespace std;
 
-
-
 krpc::Client conn = krpc::connect("VM","10.0.2.2");
 krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
 //stream time
 krpc::Stream<double> t_stream = sct.ut_stream();
 
-krpc::services::SpaceCenter& ReturnSpaceCenter(){
-	return sct;
-}
+
 
 VesselControl::VesselControl(string name){
 
 	cout << "Searching for vessel named " << name << endl;
 
-
-		for (int j = 0; j < int(sct.vessels().size()) ; j++){
-			if (sct.vessels()[j].name() == name){
-				vessel = sct.vessels()[j];
-			}
-		}
+	vessel = findVessel(name);
 
 	//REFERENCE FRAMES
 		ref_frame_surf = vessel.surface_reference_frame();
@@ -64,7 +55,6 @@ VesselControl::VesselControl(string name){
 		AW2Engine = vessel.parts().with_tag("AW2")[0];
 
 		cout << vessel.name() << " successfully created." << endl;
-
 
 }
 
@@ -121,14 +111,14 @@ void VesselControl::loop(){
 		}
 
 		//update thrust limits
-		AW1Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust + rollAdjust);
-		AW2Engine.engine().set_thrust_limit(midval + pitchAdjust + yawAdjust - rollAdjust);
-		WD1Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust + rollAdjust);
-		WD2Engine.engine().set_thrust_limit(midval + pitchAdjust - yawAdjust - rollAdjust);
-		SD1Engine.engine().set_thrust_limit(midval - pitchAdjust - yawAdjust + rollAdjust);
-		SD2Engine.engine().set_thrust_limit(midval - pitchAdjust - yawAdjust - rollAdjust);
-		AS1Engine.engine().set_thrust_limit(midval - pitchAdjust + yawAdjust + rollAdjust);
-		AS2Engine.engine().set_thrust_limit(midval - pitchAdjust + yawAdjust - rollAdjust);
+		AW1Engine.engine().set_thrust_limit((midval + pitchAdjust + yawAdjust + rollAdjust));
+		AW2Engine.engine().set_thrust_limit((midval + pitchAdjust + yawAdjust - rollAdjust));
+		WD1Engine.engine().set_thrust_limit((midval + pitchAdjust - yawAdjust + rollAdjust));
+		WD2Engine.engine().set_thrust_limit((midval + pitchAdjust - yawAdjust - rollAdjust));
+		SD1Engine.engine().set_thrust_limit((midval - pitchAdjust - yawAdjust + rollAdjust));
+		SD2Engine.engine().set_thrust_limit((midval - pitchAdjust - yawAdjust - rollAdjust));
+		AS1Engine.engine().set_thrust_limit((midval - pitchAdjust + yawAdjust + rollAdjust));
+		AS2Engine.engine().set_thrust_limit((midval - pitchAdjust + yawAdjust - rollAdjust));
 
 		//Horizontal speed
 		if (lonVelOverride == 0){
@@ -154,6 +144,17 @@ VesselControl::~VesselControl(){
 		alt_stream.remove();
 		lat_stream.remove();
 		lon_stream.remove();
+}
+
+krpc::services::SpaceCenter::Vessel findVessel(string name){
+	krpc::services::SpaceCenter::Vessel vessel;
+	for (int j = 0; j < int(sct.vessels().size()) ; j++){
+		if (sct.vessels()[j].name() == name){
+			vessel = sct.vessels()[j];
+			break;
+		}
+	}
+	return vessel;
 }
 
 

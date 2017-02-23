@@ -22,7 +22,7 @@ int main() {
     VesselList[i].vessel.set_name(to_string(i));
     }
 
-    VesselControl Vessel0 = VesselControl("MiniDrone");
+    VesselControl Vessel0 = VesselControl("BigDrone");
 
         Vessel0.alt1 = 80;
         Vessel0.startEngines();
@@ -31,11 +31,14 @@ int main() {
     for ( size_t i = 0; i < vesselNumber; i++ ){
 
         VesselList[i].alt1 = 90;
+        Vessel0.retractGear();
         VesselList[i].startEngines();
         VesselList[i].vessel.control().set_throttle(1);
     }
 
     cout << endl << "Launching" << endl;
+
+
 
 
 	double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
@@ -94,33 +97,20 @@ int main() {
 
                     }
 
-                    double alt2 = Vessel0.alt1;
-                    double a = 0.007;
 
         while (true){
 
             for ( size_t i = 0; i < vesselNumber; i++ ){
                 VesselList[i].lat1 = centerLat + circleRadius * cos(phi + i*2*pi/vesselNumber);
                 VesselList[i].lon1 = centerLon + circleRadius * sin(phi + i*2*pi/vesselNumber);
-
-
+                VesselList[i].alt1 = 230 + sin(3*(phi+ i*2*pi/vesselNumber)) * circleRadius / degPerMeter / 3 ;
+                
                 VesselList[i].loop();
             }
 
+                cout << phi << endl;
 
-
-                cout << phi/pi << endl;
-                if ( (pi/4 > phi && phi > -pi/4) || (3*pi/4 < phi && phi < 5*pi/4) ){
-                    Vessel0.alt1 = alt2 + a*sin(phi)*cos(phi)    /    (1+sin(phi)*sin(phi))   /degPerMeter   ;
-                    Vessel0.lat1 = centerLat + a*cos(phi)  /  (1+sin(phi)*sin(phi));
-                }else{
-                    cout << "in else" << endl;
-                    phi -= pi/2;
-                    Vessel0.alt1 = (alt2 - a*sin(phi)*cos(phi)    /    (1+sin(phi)*sin(phi))  /degPerMeter  );
-                    Vessel0.lat1 = centerLat + a*cos(phi)  /  (1+sin(phi)*sin(phi));
-                    phi += pi/2;
-                }
-
+                Vessel0.SetTopVector = make_tuple(0,cos(-phi),sin(-phi));
                 Vessel0.loop();
 
                 phi += 0.05;
@@ -135,3 +125,18 @@ int main() {
 
 }
 
+
+            //LEMNISCATE
+                // double alt2 = Vessel0.alt1;
+                // double a = 0.004;
+                // cout << phi/pi << endl;
+                // if ( (pi/4 > phi && phi > -pi/4) || (3*pi/4 < phi && phi < 5*pi/4) ){
+                //     Vessel0.alt1 = alt2 - a*sin(phi)*cos(phi)    /    (1+sin(phi)*sin(phi))   /degPerMeter   ;
+                //     Vessel0.lat1 = centerLat + a*cos(phi)  /  (1+sin(phi)*sin(phi));
+                // }else{
+                //     cout << "in else" << endl;
+                //     phi -= pi/2;
+                //     Vessel0.alt1 = (alt2 + a*sin(phi)*cos(phi)    /    (1+sin(phi)*sin(phi))  /degPerMeter  );
+                //     Vessel0.lat1 = centerLat + a*cos(phi)  /  (1+sin(phi)*sin(phi));
+                //     phi += pi/2;
+                // }
