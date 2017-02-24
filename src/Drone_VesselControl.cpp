@@ -7,10 +7,6 @@ using namespace std;
 krpc::Client conn = krpc::connect("VM","10.0.2.2");
 krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
 
-//stream time
-krpc::Stream<double> t_stream = sct.ut_stream();
-
-
 
 VesselControl::VesselControl(string name){
 
@@ -137,16 +133,7 @@ void VesselControl::loop(){
 
 }
 
-VesselControl::~VesselControl(){
-		t_stream.remove();
-		vel_stream.remove();
-		angvel_stream.remove();
-		alt_stream.remove();
-		lat_stream.remove();
-		lon_stream.remove();
-}
-
-krpc::services::SpaceCenter::Vessel findVessel(string name){
+krpc::services::SpaceCenter::Vessel VesselControl::findVessel(string name){
 	krpc::services::SpaceCenter::Vessel vessel;
 	for (int j = 0; j < int(sct.vessels().size()) ; j++){
 		if (sct.vessels()[j].name() == name){
@@ -156,6 +143,16 @@ krpc::services::SpaceCenter::Vessel findVessel(string name){
 	}
 	return vessel;
 }
+
+VesselControl::~VesselControl(){
+		vel_stream.remove();
+		angvel_stream.remove();
+		alt_stream.remove();
+		lat_stream.remove();
+		lon_stream.remove();
+}
+
+
 
 
 	

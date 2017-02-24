@@ -9,9 +9,6 @@ double degPerMeter = (360.0 / 3769911.0); //degrees per meter on Kerbin
 
 int main() {
 
-    // krpc::services::SpaceCenter sct = ReturnSpaceCenter();
-
-    
     unsigned int vesselNumber = 10;
 
     // allocate memory

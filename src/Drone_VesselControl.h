@@ -12,7 +12,6 @@
 
 using namespace std;
 	
-krpc::services::SpaceCenter::Vessel findVessel(string name);
 
 class VesselControl{
 
@@ -56,7 +55,6 @@ class VesselControl{
 			PID LatGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 			PID LonGuidanceAdjustPID = PID(1.2,-1.2,0.05,0.01,0);
 
-
 			//Rotational velocity control setup
 			PID PitchVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
 			PID YawVelControlPID 		= PID(3,	-3,	0.045,	0.035,	0);
@@ -67,7 +65,6 @@ class VesselControl{
 			PID YawTorqueControlPID		= PID(0.4,	-0.4,	0.25,	0,		0);
 			PID RollTorqueControlPID	= PID(0.4,	-0.4,	0.25,	0,		0);
 
-
 			//Altitude speed control setup
 			PID VertSpeedControlPID		= PID(40,	-40,		0.7,		0,		0);
 			
@@ -76,37 +73,39 @@ class VesselControl{
 			
 
 
-		private:
-			double LatSpeedSP, LonSpeedSP;
+	private:	
+		krpc::services::SpaceCenter::Vessel findVessel(string name);
 
-			double LatAdjust = 0 , LonAdjust = 0;
-			double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
+		double LatSpeedSP, LonSpeedSP;
 
-			float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
-			float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
-			float vertVelSP = 0;
-			float thrott = 0;
+		double LatAdjust = 0 , LonAdjust = 0;
+		double LatSpeedAdjust = 0, LonSpeedAdjust = 0;
 
-			//define facing vectors in in ref_frame_vessel
-			tuple<double, double, double> TopVector = make_tuple(0,0,-1);
-			tuple<double, double, double> ForeVector = make_tuple(0,1,0);
-			tuple<double, double, double> StarVector = make_tuple(1,0,0);
+		float pitchVelSP = 0, yawVelSP = 0, rollVelSP = 0;
+		float midval = 0, pitchAdjust = 0, yawAdjust = 0, rollAdjust = 0;
+		float vertVelSP = 0;
+		float thrott = 0;
 
-			//angular velocity vectors converted to vessel reference frame
-			tuple<double, double, double> angVel_vessel;
+		//define facing vectors in in ref_frame_vessel
+		tuple<double, double, double> TopVector = make_tuple(0,0,-1);
+		tuple<double, double, double> ForeVector = make_tuple(0,1,0);
+		tuple<double, double, double> StarVector = make_tuple(1,0,0);
 
-			//Facing vectors converted to surface reference frame
-			tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
+		//angular velocity vectors converted to vessel reference frame
+		tuple<double, double, double> angVel_vessel;
 
-			//REFERENCE FRAMES
-			krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
-			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orbit_body;
-			krpc::services::SpaceCenter::ReferenceFrame ref_frame_nonrot;
-			krpc::services::SpaceCenter::ReferenceFrame ref_frame_orb;
-			krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel;
+		//Facing vectors converted to surface reference frame
+		tuple<double, double, double> TopVector_surface, StarVector_surface, ForeVector_surface, attitudeError;
 
-			//Engines
-			krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
+		//REFERENCE FRAMES
+		krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
+		krpc::services::SpaceCenter::ReferenceFrame ref_frame_orbit_body;
+		krpc::services::SpaceCenter::ReferenceFrame ref_frame_nonrot;
+		krpc::services::SpaceCenter::ReferenceFrame ref_frame_orb;
+		krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel;
+
+		//Engines
+		krpc::services::SpaceCenter::Part WD1Engine,WD2Engine,AS1Engine,AS2Engine,SD1Engine,SD2Engine,AW1Engine,AW2Engine;
 
 };
 
