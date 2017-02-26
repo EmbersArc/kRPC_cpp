@@ -10,7 +10,7 @@ int main() {
 
     cout << "Started." << endl;		
 
-    VesselControl Vessel1 = VesselControl("BigDrone");
+    VesselControl Vessel1 = VesselControl("Drone");
 
 
     cout << "Assigned vessel:    " << Vessel1.vessel.name() << endl;
