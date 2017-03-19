@@ -15,6 +15,13 @@
         "*hcsignal": "cpp",
         "iostream": "cpp",
         "iosfwd": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "cctype": "cpp",
+        "clocale": "cpp",
+        "csignal": "cpp",
+        "cstdio": "cpp",
+        "cwchar": "cpp",
+        "cwctype": "cpp",
+        "initializer_list": "cpp"
     }
 }
