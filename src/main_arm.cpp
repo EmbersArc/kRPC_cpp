@@ -56,7 +56,6 @@ int main() {
 
 
 	JS << servo1.position(),servo2.position(),servo3.position(), 1;
-	JS(0) = JS(0)/180*pi;
 
 	std::cout << JS << std::endl << std::endl;
 
@@ -74,48 +73,34 @@ int main() {
 
 	t23 << 	cos(JS(2)),		0,				sin(JS(2)),			0,
 			0,		 		1,  			0, 					0,
-			-sin(JS(2)),	0,  			cos(JS(2)),			jointLength,
+			-sin(JS(2)),	0,  			cos(JS(2)),			0,
 			0,		 		0,				0, 					1;
+
+	Matrix3d J;
+
+	J << 	(jointLength*(-cos(JS(2)) sin(JS(0)) sin(JS(1)) - cos(JS(1)) sin(JS(0)) sin(JS(2)))),			(jointLength*(cos(JS(0)) cos(JS(1)) cos(JS(2)) - cos(JS(0)) sin(JS(1)) sin(JS(2)))),		(jointLength*(cos(JS(0)) cos(JS(1)) cos(JS(2)) - cos(JS(0)) sin(JS(1)) sin(JS(2)))),
+			(jointLength*(cos(JS(0)) cos(JS(2)) sin(JS(1)) + cos(JS(0)) cos(JS(1)) sin(JS(2)))),			(jointLength*(cos(JS(1)) cos(JS(2)) sin(JS(0)) - sin(JS(0)) sin(JS(1)) sin(JS(2)))),		(jointLength*(cos(JS(1)) cos(JS(2)) sin(JS(0)) - sin(JS(0)) sin(JS(1)) sin(JS(2)))),
+			0,																								(jointLength*(-cos(JS(2)) sin(JS(1)) - cos(JS(1)) sin(JS(2)))),								(jointLength*(-cos(JS(2)) sin(JS(1)) - cos(JS(1)) sin(JS(2))));
+
+
+
+
 
 	std::cout << t01 << std::endl << std::endl;
 	std::cout << t12 << std::endl << std::endl;
 	std::cout << t23 << std::endl << std::endl;
 
-	Matrix4d tfMatrix = t01*t12*t23;
 
-	//Matrix4d tfMatrixInv = tfMatrix.inverse();
+
 
 	OS << 0,0,0, 1;
-	std::cout << "Start:  "  << std::endl << tfMatrix*OS << std::endl << std::endl;
-	
-	// JS = tfMatrixInv*OS;
-	// JS(0) = JS(0) * 180 / pi;
-
-
+	std::cout << "Start:  "  << std::endl << J*OS << std::endl << std::endl;
 
 	std::cout << JS << std::endl << std::endl;
 
 
-
 	while(true){
 	
-		servo1Pos += servo1Speed;
-		servo2Pos += servo2Speed;
-		servo3Pos += servo3Speed;
-
-		std::cout << servo1Pos << std::endl;
-
-		
-
-
-		servo1.move_to(servo1Pos,4);
-		servo2.move_to(servo2Pos,4);
-		servo3.move_to(servo3Pos,4);
-
-
-
-
-
 	}
 
 	
