@@ -13,13 +13,13 @@
 #include <Eigen/Geometry>
 
 using namespace Eigen;
-IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-
+double PI = 4*atan(1);
 
 krpc::Client conn = krpc::connect("VM","10.0.2.2");
-krpc::services::SpaceCenter sct = krpc::services::SpaceCenter(&conn);
+krpc::services::SpaceCenter sct(&conn);
 krpc::services::InfernalRobotics ir(&conn);
 
+// function to find vessel
 krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 	krpc::services::SpaceCenter::Vessel vessel;
 	for (int j = 0; j < int(sct.vessels().size()) ; j++){
@@ -31,10 +31,11 @@ krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 	return vessel;
 }
 
-double PI = 4*atan(1);
 
 krpc::services::SpaceCenter::Vessel vessel = findVessel("Arm");
-double jointLength = 2.5; //m
+double jointLength1 = 4.6; //m
+double jointLength2 = 4.9; //m
+double jointLength3 = 5.5; //m
 
 // transforms
 Vector3d JS; 	//Joint space coordinates
@@ -66,64 +67,67 @@ int main() {
 	std::tuple<double,double,double> TargetPosition;
 	TargetPosition = vectorSubtract(Target.center_of_mass(ref_frame_surf),Base.center_of_mass(ref_frame_surf)); //position relative to base
 
-	dJS << 1,1,1;
 	t << -get<1>(TargetPosition),
 		get<2>(TargetPosition),
 		get<0>(TargetPosition);
 
 	e << 1,1,1;
 
-	JS << servo1.position(),servo2.position(),servo3.position();
+	// initialize servo positions
+	JS << 
+		servo1.position(),
+		servo2.position(),
+		servo3.position();
 
-		std::cout << JS << std::endl << std::endl;
-
-
+	// to radian
 	JS = JS * PI / 180;
 
-
-
-	// while(e.norm() > 0.01){
+	// work for me
+	while(e.norm() > 0.01){
 
 		// EE Position Model
 		s <<	
-		cos(JS(0))*(jointLength*cos(JS(2))*sin(JS(1))+jointLength*cos(JS(1))*sin(JS(2))),
-		sin(JS(0))*(jointLength*cos(JS(2))*sin(JS(1))+jointLength*cos(JS(1))*sin(JS(2))),
-		2*jointLength+jointLength*cos(JS(1))*cos(JS(2))-jointLength*sin(JS(1))*sin(JS(2));
-		std::cout << s << std::endl << std::endl;
-
-
+			jointLength2*cos(JS(0))*sin(JS(1))+jointLength3*cos(JS(0))*(cos(JS(2))*sin(JS(1))+cos(JS(1))*sin(JS(2))),
+			jointLength2*sin(JS(0))*sin(JS(1))+jointLength3*sin(JS(0))*(cos(JS(2))*sin(JS(1))+cos(JS(1))*sin(JS(2))),
+			jointLength1+jointLength2*cos(JS(1))+jointLength3*(cos(JS(1))*cos(JS(2))-sin(JS(1))*sin(JS(2)));
 
 		// JACOBI
-		J.col(0)	<<	jointLength*(-cos(JS(2))*sin(JS(0))*sin(JS(1))-cos(JS(1))*sin(JS(0))*sin(JS(2))),
-						jointLength*(cos(JS(0))*cos(JS(2))*sin(JS(1))+cos(JS(0))*cos(JS(1))*sin(JS(2))),
-						0;
+		J.col(0) <<
+			-jointLength2*sin(JS(0))*sin(JS(1))-jointLength3*sin(JS(0))*(cos(JS(2))*sin(JS(1))+cos(JS(1))*sin(JS(2))),
+			jointLength2*cos(JS(0))*sin(JS(1))+jointLength3*cos(JS(0))*(cos(JS(2))*sin(JS(1))+cos(JS(1))*sin(JS(2))),
+			0;
 
-		J.col(1)	<<	jointLength*(cos(JS(0))*cos(JS(1))*cos(JS(2))-cos(JS(0))*sin(JS(1))*sin(JS(2))),
-						jointLength*(cos(JS(1))*cos(JS(2))*sin(JS(0))-sin(JS(0))*sin(JS(1))*sin(JS(2))),
-						jointLength*(-cos(JS(2))*sin(JS(1))-cos(JS(1))*sin(JS(2)));
+		J.col(1) <<
+			jointLength2*cos(JS(0))*cos(JS(1))+jointLength3*cos(JS(0))*(cos(JS(1))*cos(JS(2))-sin(JS(1))*sin(JS(2))),
+			jointLength2*cos(JS(1))*sin(JS(0))+jointLength3*sin(JS(0))*(cos(JS(1))*cos(JS(2))-sin(JS(1))*sin(JS(2))),
+			-jointLength2*sin(JS(1))+jointLength3*(-cos(JS(2))*sin(JS(1))-cos(JS(1))*sin(JS(2)));
 
-		J.col(2)	<<	jointLength*(cos(JS(0))*cos(JS(1))*cos(JS(2))-cos(JS(0))*sin(JS(1))*sin(JS(2))),
-						jointLength*(cos(JS(1))*cos(JS(2))*sin(JS(0))-sin(JS(0))*sin(JS(1))*sin(JS(2))),
-						jointLength*(-cos(JS(2))*sin(JS(1))-cos(JS(1))*sin(JS(2)));
+		J.col(2) <<
+			jointLength3*cos(JS(0))*(cos(JS(1))*cos(JS(2))-sin(JS(1))*sin(JS(2))),
+			jointLength3*sin(JS(0))*(cos(JS(1))*cos(JS(2))-sin(JS(1))*sin(JS(2))),
+			jointLength3*(-cos(JS(2))*sin(JS(1))-cos(JS(1))*sin(JS(2)));
 
 		e = t - s; //compute error
 		
-		std::cout << e.norm() << std::endl << std::endl;
 		JJte = J*J.transpose()*e;
 		alpha = e.dot(JJte) / JJte.dot(JJte);
 		dJS = alpha*J.transpose()*e; //iterative adjustment to joint space
 		JS += dJS;
 		
-	// }
+	}
 
+	// to degrees
 	JS = JS * 180 / PI;
-	// servo1.move_to(JS(0),5);
-	// servo2.move_to(JS(1),5);
-	// servo3.move_to(JS(2),5);
 
+	// move it
+	servo1.move_to(JS(0),1);
+	servo2.move_to(JS(1),1);
+	servo3.move_to(JS(2),1);
+
+	// yay
 	std::cout << "----DONE----" << std::endl;
 
-
+	// wait for better times
 	while (true){
 		
 	}
