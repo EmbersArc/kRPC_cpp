@@ -31,49 +31,41 @@ krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 	return vessel;
 }
 
-
 krpc::services::SpaceCenter::Vessel vessel = findVessel("Arm");
+
+krpc::services::InfernalRobotics::ServoGroup servogroup = ir.servo_group_with_name(vessel, "servos");
+krpc::services::InfernalRobotics::Servo servo1 = servogroup.servo_with_name("servo1");
+krpc::services::InfernalRobotics::Servo servo2 = servogroup.servo_with_name("servo2");
+krpc::services::InfernalRobotics::Servo servo3 = servogroup.servo_with_name("servo3");
+
+krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
+
+krpc::services::SpaceCenter::Part EE = vessel.parts().with_tag("EE")[0]; //the end effector
+krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; //the base joint
+// krpc::services::SpaceCenter::Part Target = vessel.parts().with_tag("Target")[0]; //the target object
+
+
 double jointLength1 = 4.6; //m
 double jointLength2 = 4.9; //m
 double jointLength3 = 5.5; //m
 
-// transforms
-Vector3d JS; 	//Joint space coordinates
-Vector3d dJS; 	//Joint space adjustment
 
-Matrix3d J; 	//Jacobian
+void CalculatePositions(Vector3d t){
 
-Vector3d t;		//target OS coordinates
-Vector3d s;		//current OS coordinates
-Vector3d e;		//error = target - current
-double alpha;	//adjustment scalar
-Vector3d JJte;	//just some intermediate step
+	// transforms
+	Vector3d JS; 		//Joint space coordinates
+	Vector3d dJS; 		//Joint space adjustment
 
+	Matrix3d J; 		//Jacobian
 
-krpc::services::InfernalRobotics::ServoGroup group = ir.servo_group_with_name(vessel, "servos");
-krpc::services::InfernalRobotics::Servo servo1 = group.servo_with_name("servo1");
-krpc::services::InfernalRobotics::Servo servo2 = group.servo_with_name("servo2");
-krpc::services::InfernalRobotics::Servo servo3 = group.servo_with_name("servo3");
-
-krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
-
-int main() {
-
-	krpc::services::SpaceCenter::Part EE = vessel.parts().with_tag("EE")[0]; //the end effector
-	krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; //the base joint
-	krpc::services::SpaceCenter::Part Target = vessel.parts().with_tag("Target")[0]; //the target object
-
-
-	std::tuple<double,double,double> TargetPosition;
-	TargetPosition = vectorSubtract(Target.center_of_mass(ref_frame_surf),Base.center_of_mass(ref_frame_surf)); //position relative to base
-
-	t << -get<1>(TargetPosition),
-		get<2>(TargetPosition),
-		get<0>(TargetPosition);
+	Vector3d s;			//current OS coordinates
+	Vector3d e;			//error = target - current
+	double alpha;		//adjustment scalar
+	Vector3d JJte;		//just some intermediate step
 
 	e << 1,1,1;
 
-	// initialize servo positions
+	// assign servo positions
 	JS << 
 		servo1.position(),
 		servo2.position(),
@@ -82,7 +74,6 @@ int main() {
 	// to radian
 	JS = JS * PI / 180;
 
-	// work for me
 	while(e.norm() > 0.01){
 
 		// EE Position Model
@@ -113,6 +104,8 @@ int main() {
 		alpha = e.dot(JJte) / JJte.dot(JJte);
 		dJS = alpha*J.transpose()*e; //iterative adjustment to joint space
 		JS += dJS;
+
+		std::cout << e << std::endl;
 		
 	}
 
@@ -123,6 +116,33 @@ int main() {
 	servo1.move_to(JS(0),1);
 	servo2.move_to(JS(1),1);
 	servo3.move_to(JS(2),1);
+
+}
+
+
+
+
+int main() {
+
+	Vector3d tar;			//target OS coordinates
+
+	std::tuple<double,double,double> TargetPosition;
+
+	krpc::services::SpaceCenter::Vessel TargetVessel = findVessel("Target");
+
+	while(true){
+
+		TargetPosition = vectorSubtract(TargetVessel.position(ref_frame_surf),Base.position(ref_frame_surf)); //position relative to base
+
+		tar << -get<1>(TargetPosition),
+			get<2>(TargetPosition),
+			get<0>(TargetPosition) + 1;
+
+		std::cout << tar << std::endl;
+
+		// work for me
+		CalculatePositions(tar);
+	}
 
 	// yay
 	std::cout << "----DONE----" << std::endl;
