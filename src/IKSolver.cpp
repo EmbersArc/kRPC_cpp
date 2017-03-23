@@ -24,12 +24,14 @@ Vector3d CalculatePositions(Vector3d t, Vector3d JS){
 
 	e << 1,1,1;
 
+ 
+
 	// to radian
 	JS = JS * PI / 180;
 
 	while(e.norm() > 0.01 && counter++ < 200){
 
-		
+
 		// EE Position Model
 		s <<	
 			jointLength2*cos(JS(0))*sin(JS(1))+jointLength3*cos(JS(0))*(cos(JS(2))*sin(JS(1))+cos(JS(1))*sin(JS(2))),
@@ -57,8 +59,15 @@ Vector3d CalculatePositions(Vector3d t, Vector3d JS){
 		JJte = J*J.transpose()*e;
 		alpha = e.dot(JJte) / JJte.dot(JJte);
 		dJS = alpha*J.transpose()*e; //iterative adjustment to joint space
+
 		JS += dJS;	
-		
+
+        if (JS(1) > PI/2){
+            JS(1) = PI/2-(JS(1)-PI/2);
+            JS(2) = PI/2-(JS(2)-PI/2);
+            return JS;
+        }
+
 	}
 
 	// to degrees

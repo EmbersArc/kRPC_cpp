@@ -10,10 +10,14 @@
 #include "IKSolver.h"
 
 using namespace Eigen;
+using std::cout;
+using std::endl;
 
 krpc::Client conn = krpc::connect("VM","10.0.2.2");
 krpc::services::SpaceCenter sct(&conn);
 krpc::services::InfernalRobotics ir(&conn);
+
+
 
 
 // function to find vessel
@@ -83,6 +87,8 @@ int main() {
 			
 			if (JS(0)==999){
 				servogroup.stop();
+				cout << "unreachable!" << endl << endl;
+				
 			}
 			else{
 				servo1.move_to(JS(0),7);
@@ -93,7 +99,7 @@ int main() {
 	}
 
 	// yay
-	std::cout << "----DONE----" << std::endl;
+	cout << "----DONE----" << endl;
 
 	// wait for better times
 	while (true){
