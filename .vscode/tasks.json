@@ -5,6 +5,7 @@
     "command": "g++",
     "isShellCommand": true,
     "args": [
+    "${workspaceRoot}/src/IKSolver.cpp",       
     "${workspaceRoot}/src/TupleOperations.cpp",       
     "${workspaceRoot}/src/main_arm.cpp",       
     "-std=c++11", "-lkrpc","-lprotobuf","-lcurses",
