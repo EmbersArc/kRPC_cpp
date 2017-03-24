@@ -4,11 +4,12 @@ using namespace Eigen;
 
 
 Vector3d CalculatePositions(Vector3d t, Vector3d JS){
+	
+	double PI = 4*atan(1);
 
     double jointLength1 = 1.15; //m 4.6
     double jointLength2 = 2.5; //m 4.9
     double jointLength3 = 2.7; //m 5.5
-    double PI = 4*atan(1);
 
 	int counter = 0;
 
@@ -73,7 +74,7 @@ Vector3d CalculatePositions(Vector3d t, Vector3d JS){
 	// to degrees
 	JS = JS * 180 / PI;
 
-	if (counter > 199){
+	if (counter > 200-1){
 		return Vector3d(999,999,999);
 	}
 	else{
