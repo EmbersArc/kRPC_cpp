@@ -32,16 +32,22 @@ krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 	return vessel;
 }
 
-krpc::services::SpaceCenter::Vessel vessel = findVessel("MobileManipulator");
-krpc::services::SpaceCenter::Vessel tarVessel = findVessel("Target");
+krpc::services::SpaceCenter::Vessel vessel = findVessel("Husky");
+// krpc::services::SpaceCenter::Vessel tarVessel = findVessel("Target");
 
 krpc::services::InfernalRobotics::ServoGroup servogroup = ir.servo_group_with_name(vessel, "servos");
-krpc::services::InfernalRobotics::Servo servo1 = servogroup.servo_with_name("servo1");
-krpc::services::InfernalRobotics::Servo servo2 = servogroup.servo_with_name("servo2");
-krpc::services::InfernalRobotics::Servo servo3 = servogroup.servo_with_name("servo3");
+krpc::services::InfernalRobotics::Servo servo1 = servogroup.servo_with_name("a");
+krpc::services::InfernalRobotics::Servo servo2 = servogroup.servo_with_name("b");
+krpc::services::InfernalRobotics::Servo servo3 = servogroup.servo_with_name("c");
+krpc::services::InfernalRobotics::Servo servo4 = servogroup.servo_with_name("d");
+krpc::services::InfernalRobotics::Servo servo5 = servogroup.servo_with_name("e");
+krpc::services::InfernalRobotics::Servo servo6 = servogroup.servo_with_name("f");
 krpc::Stream<float> servo1pos_stream = servo1.position_stream();
 krpc::Stream<float> servo2pos_stream = servo2.position_stream();
 krpc::Stream<float> servo3pos_stream = servo3.position_stream();
+krpc::Stream<float> servo4pos_stream = servo4.position_stream();
+krpc::Stream<float> servo5pos_stream = servo5.position_stream();
+krpc::Stream<float> servo6pos_stream = servo6.position_stream();
 
 
 
@@ -57,14 +63,16 @@ krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; //t
 
 int main() {
 	
-	//double PI = 4*atan(1);
+	double PI = 4*atan(1);
 
-	Vector3d JS; 	//Joint space coordinates
-	Vector3d tar;	//target OS coordinates
+	double servoSpeed = 4;
+
+	Vector6d JS; 	//Joint space coordinates
+	Vector6d tar;	//target OS coordinates
 
 	std::tuple<double,double,double> TargetPosition, TarPosTF;
 
-	std::tuple<double,double,double>  TarPos = tarVessel.position(ref_frame);
+	std::tuple<double,double,double>  TarPos = vessel.position(ref_frame);
 
 
 	while(true){
@@ -73,31 +81,41 @@ int main() {
 		JS << 
 			servo1pos_stream(),
 			servo2pos_stream(),
-			servo3pos_stream();
+			servo3pos_stream(),
+			servo4pos_stream(),
+			servo5pos_stream(),
+			servo6pos_stream();
 
 		TarPosTF = sct.transform_position(TarPos,ref_frame,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
 
 		tar << -get<1>(TargetPosition),
 			get<0>(TargetPosition),
-			-get<2>(TargetPosition) +1.2;
+			-get<2>(TargetPosition) + 1.5,
+			0,
+			0,
+			0;
+
 
 
 			// work for me
-			JS = CalculatePositions(tar,JS);
+			JS = CalculatePositions(tar,JS,true);
 			
 			if (JS(0)==999){
 				servogroup.stop();
-				cout << "out of range!" << endl << endl;
+				cout << "out of range!!!!!!!!!!!!!!!!" << endl << endl;
 			}
 			else{
-				servo1.move_to(JS(0),1);
-				servo2.move_to(JS(1),1);
-				servo3.move_to(JS(2),1);
+				servo1.move_to(JS(0),servoSpeed);
+				servo2.move_to(JS(1),servoSpeed);
+				servo3.move_to(JS(2),servoSpeed);
+				servo4.move_to(JS(3),servoSpeed);
+				servo5.move_to(JS(4),servoSpeed);
+				servo6.move_to(JS(5),servoSpeed);
 			}
 
 
-			Vector2d wheelInput = CalculateWheelTorque(PosSP,Pos);
+			//Vector2d wheelInput = CalculateWheelTorque(PosSP,Pos,Forevector);
 
 
 		

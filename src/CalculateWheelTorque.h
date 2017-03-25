@@ -4,4 +4,6 @@
 
 using namespace Eigen;
 
-Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,std::tuple<double,double,double> Pos);
+Vector2d CalculateWheelTorque(  std::tuple<double,double,double> PosSP,
+                                std::tuple<double,double,double> Pos, 
+                                std::tuple<double,double,double> foreVector);
