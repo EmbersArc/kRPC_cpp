@@ -18,8 +18,6 @@ krpc::services::SpaceCenter sct(&conn);
 krpc::services::InfernalRobotics ir(&conn);
 
 
-
-
 // function to find vessel
 krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 	krpc::services::SpaceCenter::Vessel vessel;
@@ -65,14 +63,14 @@ int main() {
 	
 	double PI = 4*atan(1);
 
-	double servoSpeed = 4;
+	double servoSpeed = 1;
 
 	Vector6d JS; 	//Joint space coordinates
 	Vector6d tar;	//target OS coordinates
 
 	std::tuple<double,double,double> TargetPosition, TarPosTF;
 
-	std::tuple<double,double,double>  TarPos = vessel.position(ref_frame);
+	std::tuple<double,double,double>  TarPos = Base.position(ref_frame);
 
 
 	while(true){
@@ -91,19 +89,19 @@ int main() {
 
 		tar << -get<1>(TargetPosition),
 			get<0>(TargetPosition),
-			-get<2>(TargetPosition) + 1.5,
-			0,
-			0,
-			0;
+			-get<2>(TargetPosition) + 0,
+			0,		//x
+			-PI/2,	//y
+			0;		//z
 
 
 
 			// work for me
-			JS = CalculatePositions(tar,JS,true);
+			JS = CalculatePositions(tar,JS,false);
 			
 			if (JS(0)==999){
 				servogroup.stop();
-				cout << "out of range!!!!!!!!!!!!!!!!" << endl << endl;
+				cout << "out of range!!!!!!!" << endl << endl;
 			}
 			else{
 				servo1.move_to(JS(0),servoSpeed);

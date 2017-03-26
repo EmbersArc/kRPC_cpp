@@ -8,18 +8,20 @@ using std::endl;
 
 Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 
-
+	if(!oriented){
+		tar.tail(3) << 0,0,0;
+	}
 	
 	double PI = 4*atan(1);
 
-    double jointLength0 = 0.2; //m
-    double jointLength1 = 0.2; //m
-    double jointLength2 = 2.5; //m
-    double jointLength3 = 0.2; //m
-    double jointLength4 = 2.5; //m
-    double jointLength5 = 0.2; //m
-    double jointLength6 = 0.2; //m
-    double jointLength7 = 2.7; //m
+    double jointLength0 = 0.13; //m
+    double jointLength1 = 0.13; //m
+    double jointLength2 = 2.62; //m
+    double jointLength3 = 0.13; //m
+    double jointLength4 = 2.62; //m
+    double jointLength5 = 0.13; //m
+    double jointLength6 = 0.13; //m
+    double jointLength7 = 1.78; //m
 
 	int counter = 0;
 
@@ -40,7 +42,7 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 	double a,b,c,d,e,f;
 
 
-	while(err.norm() > 0.002 && counter++ < 200){
+	while(err.norm() > 0.002 && counter++ < 500){
 
 			a = JS(0);
 			b = JS(1);
@@ -51,12 +53,12 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 
 		// EE Position Model
 		sta <<	
-		-(jointLength1-jointLength3+jointLength5)*sin(a)+cos(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(cos(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))-sin(a)*sin(e)),
-		(jointLength1-jointLength3+jointLength5)*cos(a)+sin(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(sin(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))+cos(a)*sin(e)),
-		jointLength0-sin(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+cos(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d))-jointLength7*(cos(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))-sin(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d))),
-		f*oriented,
-		(b+c+d)*oriented,
-		(a+e)*oriented;
+			-(jointLength1-jointLength3+jointLength5)*sin(a)+cos(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(cos(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))-sin(a)*sin(e)),
+			(jointLength1-jointLength3+jointLength5)*cos(a)+sin(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(sin(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))+cos(a)*sin(e)),
+			jointLength0-sin(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+cos(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d))-jointLength7*(cos(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))-sin(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d))),
+			(f)*oriented,
+			(b+c+d)*oriented,
+			(a+e)*oriented;
 
 						
 		// JACOBIAN
@@ -100,30 +102,29 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 
 
 		err = tar - sta; //compute error
-
-		// cout << err.norm() << endl;
-		
+	
 		JJte = J*J.transpose()*err;
 		alpha = err.dot(JJte) / JJte.dot(JJte);
 		dJS = alpha*J.transpose()*err; //iterative adjustment to joint space
 
 		JS += dJS;	
 
+
 	}
 
 	// to degrees
 	JS = JS * 180 / PI;
 
-	if (counter > 200-1){
+	if (counter > 500-1){
 		Vector6d fail;
 		fail << 999,0,0,0,0,0;
 		return fail;
 	}
 	else{
 		// move it
-		cout << "------" << endl;
-		cout << JS << endl;
-		cout << "------" << endl;
+		// cout << "------" << endl;
+		// cout << JS << endl;
+		// cout << "------" << endl;
 		return JS;
 	}
 
