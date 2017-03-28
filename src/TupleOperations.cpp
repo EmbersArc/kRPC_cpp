@@ -69,7 +69,7 @@ tuple<double,double,double> vectorReject(tuple<double,double,double> v1 ,tuple<d
 
 double vectorAngle(tuple<double,double,double> v1 ,tuple<double,double,double> v2 ){
 
-return acos(dotProduct(v1,v2)/(magnitude(v1)*magnitude(v2)));
+	return acos(dotProduct(v1,v2)/(magnitude(v1)*magnitude(v2)));
 
 }
 
@@ -82,7 +82,7 @@ tuple<double,double,double> orientationError(
 	tuple<double,double,double> SetTopVector)
 	{
 
-	double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+	double pi = 4*atan(1);
 
 
 		//compute attitude errors and check for underflows

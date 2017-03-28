@@ -1,9 +1,11 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include "TupleOperations.h"
+#include <iostream>
 
 using namespace Eigen;
+using std::cout;
+using std::endl;
 
-Vector2d CalculateWheelTorque(  std::tuple<double,double,double> PosSP,
-                                std::tuple<double,double,double> Pos, 
-                                std::tuple<double,double,double> foreVector);
+
+Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double speed);

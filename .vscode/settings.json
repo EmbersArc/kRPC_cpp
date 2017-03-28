@@ -23,6 +23,8 @@
         "cwchar": "cpp",
         "cwctype": "cpp",
         "initializer_list": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "geometry": "cpp",
+        "dense": "cpp"
     }
 }

@@ -8,6 +8,7 @@
 #include <krpc/services/infernal_robotics.hpp>
 #include "TupleOperations.h"
 #include "IKSolver.h"
+#include "CalculateWheelTorque.h"
 
 using namespace Eigen;
 using std::cout;
@@ -31,7 +32,7 @@ krpc::services::SpaceCenter::Vessel findVessel(std::string name){
 }
 
 krpc::services::SpaceCenter::Vessel vessel = findVessel("Husky");
-// krpc::services::SpaceCenter::Vessel tarVessel = findVessel("Target");
+krpc::services::SpaceCenter::Vessel tarVessel = findVessel("1Modular");
 
 krpc::services::InfernalRobotics::ServoGroup servogroup = ir.servo_group_with_name(vessel, "servos");
 krpc::services::InfernalRobotics::Servo servo1 = servogroup.servo_with_name("a");
@@ -46,6 +47,7 @@ krpc::Stream<float> servo3pos_stream = servo3.position_stream();
 krpc::Stream<float> servo4pos_stream = servo4.position_stream();
 krpc::Stream<float> servo5pos_stream = servo5.position_stream();
 krpc::Stream<float> servo6pos_stream = servo6.position_stream();
+krpc::Stream<float> heading_stream = vessel.flight().heading_stream();
 
 
 
@@ -53,9 +55,11 @@ krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_refe
 krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
 krpc::services::SpaceCenter::ReferenceFrame ref_frame = vessel.orbit().body().reference_frame();
 
-krpc::services::SpaceCenter::Part EE = vessel.parts().with_tag("EE")[0]; //the end effector
-krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; //the base joint
+krpc::services::SpaceCenter::Part EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
+krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
 // krpc::services::SpaceCenter::Part Target = vessel.parts().with_tag("Target")[0]; //the target object
+
+
 
 
 
@@ -70,9 +74,14 @@ int main() {
 
 	std::tuple<double,double,double> TargetPosition, TarPosTF;
 
-	std::tuple<double,double,double>  TarPos = Base.position(ref_frame);
+	std::tuple<double,double,double>  TarPos = tarVessel.position(ref_frame);
 
+	// std::tuple<double,double,double> PosSP = vessel.position(ref_frame);
+	// PosSP = sct.transform_position(PosSP,ref_frame,ref_frame_surf);
+	// get<1>(PosSP) += -20;
+	// PosSP = sct.transform_position(PosSP,ref_frame_surf,ref_frame);
 
+		
 	while(true){
 
 		// assign servo positions
@@ -87,35 +96,45 @@ int main() {
 		TarPosTF = sct.transform_position(TarPos,ref_frame,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
 
-		tar << -get<1>(TargetPosition),
-			get<0>(TargetPosition),
-			-get<2>(TargetPosition) + 0,
+		tar << 
+			//position
+			-get<1>(TargetPosition),		//x
+			get<0>(TargetPosition),			//y
+			-get<2>(TargetPosition),		//z
+			//rotation
 			0,		//x
-			-PI/2,	//y
+			0,		//y
 			0;		//z
 
 
-
 			// work for me
-			JS = CalculatePositions(tar,JS,false);
-			
-			if (JS(0)==999){
-				servogroup.stop();
-				cout << "out of range!!!!!!!" << endl << endl;
+			JS = CalculatePositions(tar,JS,true);
+				if (JS(0)==999){
+					servogroup.stop();
+					//cout << "out of range!!!!!!!" << endl << endl;
+				}
+				else{
+					servo1.move_to(JS(0),servoSpeed);
+					servo2.move_to(JS(1),servoSpeed);
+					servo3.move_to(JS(2),servoSpeed);
+					servo4.move_to(JS(3),servoSpeed);
+					servo5.move_to(JS(4),servoSpeed);
+					servo6.move_to(JS(5),servoSpeed);
+				}
+
+			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
+
+
+			if (steeringInput(1) == 0){
+				vessel.control().set_brakes(true);
+				vessel.control().set_wheel_steering(steeringInput(0));
+				vessel.control().set_wheel_throttle(steeringInput(1));
 			}
 			else{
-				servo1.move_to(JS(0),servoSpeed);
-				servo2.move_to(JS(1),servoSpeed);
-				servo3.move_to(JS(2),servoSpeed);
-				servo4.move_to(JS(3),servoSpeed);
-				servo5.move_to(JS(4),servoSpeed);
-				servo6.move_to(JS(5),servoSpeed);
+				vessel.control().set_brakes(false);
+				vessel.control().set_wheel_steering(steeringInput(0));
+				vessel.control().set_wheel_throttle(steeringInput(1));
 			}
-
-
-			//Vector2d wheelInput = CalculateWheelTorque(PosSP,Pos,Forevector);
-
-
 		
 	}
 
