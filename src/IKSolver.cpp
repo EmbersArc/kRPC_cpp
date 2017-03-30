@@ -15,7 +15,7 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 		tar.head(3) << 0,0,0;
 	}
 
-	cout << tar.tail(3) << endl;
+	// cout << tar.tail(3) << endl;
 	
 	double PI = 4*atan(1);
 
@@ -150,10 +150,6 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 		return fail;
 	}
 	else{
-		// move it
-		// cout << "------" << endl;
-		// cout << JS << endl;
-		// cout << "------" << endl;
 		return JS;
 	}
 

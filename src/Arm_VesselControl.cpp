@@ -44,19 +44,16 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
 	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
 
-
-
 	servoSpeed = 1;
-
-
-
 
 	cout << vessel.name() << " successfully created." << endl;
 
 }
 
+//returns if EE in steady state
+bool VesselControl::loop(){
 
-void VesselControl::loop(){
+	bool steadyState;
 
 	// assign servo positions
 		JS << 
@@ -67,33 +64,48 @@ void VesselControl::loop(){
 			servo5pos_stream(),
 			servo6pos_stream();
 
-			if (EE.modules_with_name("KASModuleHarpoon")[0].get_field("state") != "idle"){
+			if (EE.modules()[1].get_field("State") != "Idle"){
 				grabbing = false;
+				grabbed = true;
+			}else{
+				grabbed = false;
 			}
+
 		
 			if(grabbing){
-				grabDistance += 0.001;
+				grabDistance += 0.01;
 			}else{
 				grabDistance = 0;
 			}
 
 		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
-		get<1>(TarPosDP) -= 2 + grabDistance;
+		get<1>(TarPosDP) -= (2 - grabDistance);
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
 		DPDirection = tarVessel.parts().with_tag(dpname)[0].docking_port().direction(ref_frame_vessel);
 
-		tar << 
-			//position
-			-get<1>(TargetPosition),		//x
-			get<0>(TargetPosition),			//y
-			-get<2>(TargetPosition),		//z
-			//rotation
-			0,														//x
-			-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
-			-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
-			
+		if (grabbed == false){
+			tar << 
+				//position
+				-get<1>(TargetPosition),		//x
+				get<0>(TargetPosition),			//y
+				-get<2>(TargetPosition),		//z
+				//rotation
+				0,														//x
+				-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
+				-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
+		}else{
+			tar << 
+				//position
+				0,		//x
+				0,		//y
+				3,		//z
+				//rotation
+				0,														//x
+				PI/2,		//y
+				0;		//z
+		}
 			draw.clear();
 			draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
@@ -113,20 +125,30 @@ void VesselControl::loop(){
 					servo6.move_to(JS(5),5*servoSpeed);
 				}
 
-			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
+
+			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
 			if (steeringInput(1) == 0 || JS(0)!=999 ){
 				vessel.control().set_brakes(true);
 				vessel.control().set_wheel_steering(steeringInput(0));
 				vessel.control().set_wheel_throttle(steeringInput(1));
-			}
-			else{
+				if (magnitude(EE.velocity(ref_frame_vessel)) < 0.02){
+					steadyState = true;
+				}else{
+					steadyState = false;
+				}
+			}else{
 				vessel.control().set_brakes(false);
 				vessel.control().set_wheel_steering(steeringInput(0));
 				vessel.control().set_wheel_throttle(steeringInput(1));
+				steadyState = false;
 			}
+
+			return steadyState;
 }
+
+
 
 krpc::services::SpaceCenter::Vessel VesselControl::findVessel(string name){
 	krpc::services::SpaceCenter::Vessel vessel;

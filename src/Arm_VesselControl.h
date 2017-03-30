@@ -27,10 +27,12 @@ class VesselControl{
 
 		void setDockingPort(string name);
 		void setTarget(string name);
-		void loop();
+		bool loop();
 
 		double servoSpeed;
 		bool grabbing = false;
+		bool grabbed = false;
+
 
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;
 
