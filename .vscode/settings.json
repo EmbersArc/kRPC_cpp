@@ -25,6 +25,9 @@
         "initializer_list": "cpp",
         "*.ipp": "cpp",
         "geometry": "cpp",
-        "dense": "cpp"
+        "dense": "cpp",
+        "vector": "cpp",
+        "core": "cpp",
+        "slist": "cpp"
     }
 }

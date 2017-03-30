@@ -6,6 +6,7 @@
     "isShellCommand": true,
     "args": [
     "${workspaceRoot}/src/IKSolver.cpp",       
+    "${workspaceRoot}/src/Arm_VesselControl.cpp",       
     "${workspaceRoot}/src/CalculateWheelTorque.cpp",       
     "${workspaceRoot}/src/TupleOperations.cpp",       
     "${workspaceRoot}/src/main_arm.cpp",       

@@ -14,16 +14,18 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 	if(!located){
 		tar.head(3) << 0,0,0;
 	}
+
+	cout << tar.tail(3) << endl;
 	
 	double PI = 4*atan(1);
 
-    double jointLength0 = 0.13; //m
-    double jointLength1 = 0.13; //m
+    double jointLength0 = 0.55; //m
+    double jointLength1 = 0.55; //m
     double jointLength2 = 2.62; //m
-    double jointLength3 = 0.13; //m
+    double jointLength3 = 0.55; //m
     double jointLength4 = 2.62; //m
-    double jointLength5 = 0.13; //m
-    double jointLength6 = 0.13; //m
+    double jointLength5 = 0.55; //m
+    double jointLength6 = 0.55; //m
     double jointLength7 = 1.78; //m
 
 	int counter = 0;
