@@ -6,10 +6,13 @@ using namespace Eigen;
 using std::cout;
 using std::endl;
 
-Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
+Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool located){
 
 	if(!oriented){
 		tar.tail(3) << 0,0,0;
+	}
+	if(!located){
+		tar.head(3) << 0,0,0;
 	}
 	
 	double PI = 4*atan(1);
@@ -56,9 +59,9 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 			-(jointLength1-jointLength3+jointLength5)*sin(a)+cos(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(cos(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))-sin(a)*sin(e)),
 			(jointLength1-jointLength3+jointLength5)*cos(a)+sin(a)*(cos(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+sin(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d)))-jointLength7*(sin(a)*(sin(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))+cos(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d)))+cos(a)*sin(e)),
 			jointLength0-sin(b)*((jointLength4+jointLength6*cos(d))*sin(c)+jointLength6*cos(c)*sin(d))+cos(b)*(jointLength2+cos(c)*(jointLength4+jointLength6*cos(d))-jointLength6*sin(c)*sin(d))-jointLength7*(cos(b)*(-cos(d)*cos(e)*sin(c)-cos(c)*cos(e)*sin(d))-sin(b)*(cos(c)*cos(d)*cos(e)-cos(e)*sin(c)*sin(d))),
-			(f)*oriented,
-			(b+c+d)*oriented,
-			(a+e)*oriented;
+			(f),
+			(b+c+d),
+			(a+e);
 
 						
 		// JACOBIAN
@@ -93,12 +96,36 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented){
 			0;
 
 	
-		J.bottomRows(3).col(0) << 0,0,oriented;
-		J.bottomRows(3).col(1) << 0,oriented,0;
-		J.bottomRows(3).col(2) << 0,oriented,0;
-		J.bottomRows(3).col(3) << 0,oriented,0;
-		J.bottomRows(3).col(4) << 0,0,oriented;
-		J.bottomRows(3).col(5) << oriented,0,0;
+		J.bottomRows(3).col(0) << 0,0,1;
+		J.bottomRows(3).col(1) << 0,1,0;
+		J.bottomRows(3).col(2) << 0,1,0;
+		J.bottomRows(3).col(3) << 0,1,0;
+		J.bottomRows(3).col(4) << 0,0,1;
+		J.bottomRows(3).col(5) << 1,0,0;
+
+		if (oriented == false){
+			sta(3) = 0;
+			sta(4) = 0;
+			sta(5) = 0;
+			J.bottomRows(3).col(0) << 0,0,0;
+			J.bottomRows(3).col(1) << 0,0,0;
+			J.bottomRows(3).col(2) << 0,0,0;
+			J.bottomRows(3).col(3) << 0,0,0;
+			J.bottomRows(3).col(4) << 0,0,0;
+			J.bottomRows(3).col(5) << 0,0,0;
+		}
+
+		if (located == false){
+			sta(0) = 0;
+			sta(1) = 0;
+			sta(2) = 0;
+			J.topRows(3).col(0) << 0,0,0;
+			J.topRows(3).col(1) << 0,0,0;
+			J.topRows(3).col(2) << 0,0,0;
+			J.topRows(3).col(3) << 0,0,0;
+			J.topRows(3).col(4) << 0,0,0;
+			J.topRows(3).col(5) << 0,0,0;
+		}
 
 
 		err = tar - sta; //compute error

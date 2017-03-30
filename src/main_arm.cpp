@@ -54,6 +54,7 @@ krpc::Stream<float> heading_stream = vessel.flight().heading_stream();
 krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf = vessel.surface_reference_frame();
 krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel = vessel.reference_frame();
 krpc::services::SpaceCenter::ReferenceFrame ref_frame = vessel.orbit().body().reference_frame();
+krpc::services::SpaceCenter::ReferenceFrame ref_frame_dockingport;
 
 krpc::services::SpaceCenter::Part EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
 krpc::services::SpaceCenter::Part Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
@@ -72,14 +73,20 @@ int main() {
 	Vector6d JS; 	//Joint space coordinates
 	Vector6d tar;	//target OS coordinates
 
-	std::tuple<double,double,double> TargetPosition, TarPosTF;
+	std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;
 
-	std::tuple<double,double,double>  TarPos = tarVessel.position(ref_frame);
+	std::tuple<double,double,double>  TarPos = tarVessel.parts().with_tag("DP")[0].position(ref_frame);
+	std::tuple<double,double,double>  DPDirection;
+
+	ref_frame_dockingport = tarVessel.parts().with_tag("DP")[0].docking_port().reference_frame();
+	TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
+	get<1>(TarPosDP) -= 1;
 
 	// std::tuple<double,double,double> PosSP = vessel.position(ref_frame);
 	// PosSP = sct.transform_position(PosSP,ref_frame,ref_frame_surf);
 	// get<1>(PosSP) += -20;
 	// PosSP = sct.transform_position(PosSP,ref_frame_surf,ref_frame);
+
 
 		
 	while(true){
@@ -93,8 +100,10 @@ int main() {
 			servo5pos_stream(),
 			servo6pos_stream();
 
-		TarPosTF = sct.transform_position(TarPos,ref_frame,ref_frame_vessel);
+
+		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
+		DPDirection = tarVessel.parts().with_tag("DP")[0].docking_port().direction(ref_frame_vessel);
 
 		tar << 
 			//position
@@ -103,12 +112,17 @@ int main() {
 			-get<2>(TargetPosition),		//z
 			//rotation
 			0,		//x
-			0,		//y
-			0;		//z
+			-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
+			-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
 
+
+			cout << 
+			tar(3) << endl  <<	//x
+			tar(4) << endl	<<	//y
+			tar(5) << endl << endl;
 
 			// work for me
-			JS = CalculatePositions(tar,JS,true);
+			JS = CalculatePositions(tar,JS,true,true);
 				if (JS(0)==999){
 					servogroup.stop();
 					//cout << "out of range!!!!!!!" << endl << endl;
@@ -117,24 +131,24 @@ int main() {
 					servo1.move_to(JS(0),servoSpeed);
 					servo2.move_to(JS(1),servoSpeed);
 					servo3.move_to(JS(2),servoSpeed);
-					servo4.move_to(JS(3),servoSpeed);
-					servo5.move_to(JS(4),servoSpeed);
-					servo6.move_to(JS(5),servoSpeed);
+					servo4.move_to(JS(3),5*servoSpeed);
+					servo5.move_to(JS(4),5*servoSpeed);
+					servo6.move_to(JS(5),5*servoSpeed);
 				}
 
-			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
+			// Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
 
-			if (steeringInput(1) == 0){
-				vessel.control().set_brakes(true);
-				vessel.control().set_wheel_steering(steeringInput(0));
-				vessel.control().set_wheel_throttle(steeringInput(1));
-			}
-			else{
-				vessel.control().set_brakes(false);
-				vessel.control().set_wheel_steering(steeringInput(0));
-				vessel.control().set_wheel_throttle(steeringInput(1));
-			}
+			// if (steeringInput(1) == 0){
+			// 	vessel.control().set_brakes(true);
+			// 	vessel.control().set_wheel_steering(steeringInput(0));
+			// 	vessel.control().set_wheel_throttle(steeringInput(1));
+			// }
+			// else{
+			// 	vessel.control().set_brakes(false);
+			// 	vessel.control().set_wheel_steering(steeringInput(0));
+			// 	vessel.control().set_wheel_throttle(steeringInput(1));
+			// }
 		
 	}
 
