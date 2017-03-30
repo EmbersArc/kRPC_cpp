@@ -27,7 +27,7 @@ class VesselControl{
 
 		void setDockingPort(string name);
 		void setTarget(string name);
-		bool loop();
+		void loop();
 
 		double servoSpeed;
 		bool grabbing = false;
@@ -46,6 +46,7 @@ class VesselControl{
 		double PI = 4*atan(1);
 		krpc::services::SpaceCenter::Vessel findVessel(string name);
 
+		Vector6d JSi; 	//Joint space coordinates initial
 		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates
 
