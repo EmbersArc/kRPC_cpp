@@ -14,8 +14,25 @@ int main() {
 
 	while(true){
 		Husky.loop();
-		cout << Husky.grabbing << endl;
+		if(Husky.readyToGrab){
+			Husky.grabbing = true;
+			cout << "grabbing" << endl;
+			break;
+		}
+	}
 
+	while(true){
+		Husky.loop();
+		if(Husky.grabbed){
+			Husky.setTarget("3Modular");
+			Husky.setDockingPort("DP2");
+			cout << "grabbed" << endl;
+			break;
+		}
+	}
+
+	while(true){
+		Husky.loop();
 	}
 
 	// yay

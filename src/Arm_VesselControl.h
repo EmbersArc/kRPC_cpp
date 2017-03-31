@@ -21,7 +21,7 @@ using namespace std;
 class VesselControl{
 
 	public:
-	
+		
 		VesselControl(string name,string tarname,string dockingportname);
 		~VesselControl();
 
@@ -32,16 +32,18 @@ class VesselControl{
 		double servoSpeed;
 		bool grabbing = false;
 		bool grabbed = false;
+		bool armMoving = false;
+		bool readyToGrab = false;
 
 
+	
+	private:
+		double extendDistance = 0;
+		string dpname;
+		std::tuple<double,double,double>  DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;
 
 		std::tuple<double,double,double>  TarPos;
-		std::tuple<double,double,double>  DPDirection;
-
-	private:
-		double grabDistance = 0;
-		string dpname;
 
 		double PI = 4*atan(1);
 		krpc::services::SpaceCenter::Vessel findVessel(string name);

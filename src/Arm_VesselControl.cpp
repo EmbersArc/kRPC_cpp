@@ -65,34 +65,27 @@ void VesselControl::loop(){
 			if (EE.modules()[1].get_field("State") != "Idle"){
 				grabbing = false;
 				grabbed = true;
-				grabDistance = 0;
+				extendDistance = 0;
 			}else{
 				grabbed = false;
 			}
-
 		
 			if(grabbing){
-				grabDistance += 0.02;
+				extendDistance += 0.02;
 			}
 
 		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
-		get<1>(TarPosDP) -= (2 - grabDistance);
+		if(grabbed){
+			get<1>(TarPosDP) += (2 - extendDistance);
+		}else{
+			get<1>(TarPosDP) -= (2 - extendDistance);
+		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
 		DPDirection = tarVessel.parts().with_tag(dpname)[0].docking_port().direction(ref_frame_vessel);
 
-		if (grabbed == false){
-			tar << 
-				//position
-				-get<1>(TargetPosition),		//x
-				get<0>(TargetPosition),			//y
-				-get<2>(TargetPosition),		//z
-				//rotation
-				0,														//x
-				-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
-				-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
-		}else{
+		if (grabbed == true && armMoving == false && magnitude(TarPosTF) > 10){
 			tar << 
 				//position
 				0,		//x
@@ -102,9 +95,20 @@ void VesselControl::loop(){
 				0,		//x
 				PI/2,	//y
 				0;		//z
+		}else{
+			tar << 
+				//position
+				-get<1>(TargetPosition),		//x
+				get<0>(TargetPosition),			//y
+				-get<2>(TargetPosition),		//z
+				//rotation
+				0,														//x
+				(-1+grabbed*2)*atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
+				-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
 		}
-			// draw.clear();
-			// draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
+
+			draw.clear();
+			draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
 
 			// work for me
@@ -136,10 +140,16 @@ void VesselControl::loop(){
 				vessel.control().set_wheel_throttle(steeringInput(1));
 			}
 
-			if(JS(0)!=999 && (JS-JSi).norm() < 2 ){
-				grabbing = true;
+			if((JS-JSi).norm() < 0.2){
+				armMoving = true;
 			}else{
-				grabbing = false;
+				armMoving = false;
+			}
+
+			if( JS(0)!=999 && armMoving ){
+				readyToGrab = true;
+			}else{
+				readyToGrab = false;
 			}
 
 }
@@ -161,6 +171,11 @@ krpc::services::SpaceCenter::Vessel VesselControl::findVessel(string name){
 
 void VesselControl::setTarget(string name){
 	tarVessel = findVessel(name);
+}
+
+void VesselControl::setDockingPort(string name){
+	dpname = name;
+	ref_frame_dockingport = tarVessel.parts().with_tag(dpname)[0].docking_port().reference_frame();
 }
 
 VesselControl::~VesselControl(){
