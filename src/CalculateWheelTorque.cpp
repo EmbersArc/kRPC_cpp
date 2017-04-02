@@ -21,7 +21,7 @@ Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double spee
 
     // if(get<1>(PosSP) > 0){
         angError = atan2(get<0>(PosSP),get<1>(PosSP));
-        cout << angError << endl;
+        // cout << angError << endl;
     // }
     // else{
     //     angError = -atan2(get<0>(PosSP),-get<1>(PosSP));

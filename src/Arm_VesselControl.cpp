@@ -53,14 +53,6 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 //returns if EE in steady state
 void VesselControl::loop(){
 
-	// assign servo positions
-		JSi << 
-			servo1pos_stream(),
-			servo2pos_stream(),
-			servo3pos_stream(),
-			servo4pos_stream(),
-			servo5pos_stream(),
-			servo6pos_stream();
 
 			if (EE.modules()[1].get_field("State") != "Idle"){
 				grabbing = false;
@@ -71,7 +63,7 @@ void VesselControl::loop(){
 			}
 		
 			if(grabbing){
-				extendDistance += 0.02;
+				extendDistance += 0.01;
 			}
 
 		TarPos = dockingPort.position(ref_frame);
@@ -83,7 +75,9 @@ void VesselControl::loop(){
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
+		TargetPosition = make_tuple(-get<1>(TargetPosition),get<0>(TargetPosition),-get<2>(TargetPosition)); //transform to different base coordinate system
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
+		DPDirection = make_tuple(-get<1>(DPDirection),get<0>(DPDirection),-get<2>(DPDirection)); //transform to different base coordinate system
 
 		if (grabbed == true && magnitude(TarPosTF) > 10){
 			tar << 
@@ -98,70 +92,60 @@ void VesselControl::loop(){
 		}else if(grabbed == true){
 			tar << 
 				//position
-				-get<1>(TargetPosition),		//x
-				get<0>(TargetPosition),			//y
-				-get<2>(TargetPosition),		//z
+				get<0>(TargetPosition),		//x
+				get<1>(TargetPosition),		//y
+				get<2>(TargetPosition),		//z
 				//rotation
-				0,		
-				-atan2(get<1>(DPDirection),get<2>(DPDirection)),		//y
-				-atan2(get<1>(DPDirection),get<0>(DPDirection));		//z	
+				-atan2(-get<1>(DPDirection),-get<2>(DPDirection)),						
+				-atan2(-get<2>(DPDirection),-get<0>(DPDirection)),						
+				-atan2(-get<0>(DPDirection),-get<1>(DPDirection));
 
 		}else{
 			tar << 
 				//position
-				-get<1>(TargetPosition),		//x
-				get<0>(TargetPosition),			//y
-				-get<2>(TargetPosition),		//z
+				get<0>(TargetPosition),		//x
+				get<1>(TargetPosition),		//y
+				get<2>(TargetPosition),		//z
 				//rotation
-				0,														//x
-				-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
-				-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
+				-atan2(get<1>(DPDirection),get<2>(DPDirection)),						
+				-atan2(get<2>(DPDirection),get<0>(DPDirection)),						
+				-atan2(get<0>(DPDirection),get<1>(DPDirection));
+
 		}
 
 			draw.clear();
 			draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
 
-			// work for me
-			JS = CalculatePositions(tar,JSi,true,true);
-				if (JS(0)==999){
-					servogroup.stop();
-					//cout << "out of range!!!!!!!" << endl << endl;
-				}
-				else{
-					servo1.move_to(JS(0),servoSpeed);
-					servo2.move_to(JS(1),servoSpeed);
-					servo3.move_to(JS(2),servoSpeed);
-					servo4.move_to(JS(3),5*servoSpeed);
-					servo5.move_to(JS(4),5*servoSpeed);
-					servo6.move_to(JS(5),5*servoSpeed);
-				}
+			// assign servo positions
+				JSi << 
+					servo1pos_stream(),
+					servo2pos_stream(),
+					servo3pos_stream(),
+					servo4pos_stream(),
+					servo5pos_stream(),
+					servo6pos_stream();
+
+				JS = CalculatePositions(tar,JSi,true,true);
+					if (JS(0)==999){
+						servogroup.stop();
+						//cout << "out of range!!!!!!!" << endl << endl;
+					}
+					else{
+						servo1.move_to(JS(0),servoSpeed);
+						servo2.move_to(JS(1),servoSpeed);
+						servo3.move_to(JS(2),servoSpeed);
+						servo4.move_to(JS(3),5*servoSpeed);
+						servo5.move_to(JS(4),5*servoSpeed);
+						servo6.move_to(JS(5),5*servoSpeed);
+					}
+			
 
 
 
 			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
-			if (steeringInput(1) == 0 || JS(0)!=999){
-				vessel.control().set_brakes(true);
-				vessel.control().set_wheel_steering(steeringInput(0));
-				vessel.control().set_wheel_throttle(0);
-			}else{
-				vessel.control().set_brakes(false);
-				vessel.control().set_wheel_steering(steeringInput(0));
-				vessel.control().set_wheel_throttle(steeringInput(1));
-			}
 
-			if((JS-JSi).norm() < 0.2){
-				armMoving = true;
-			}else{
-				armMoving = false;
-			}
-
-			if( JS(0)!=999 && armMoving ){
-				readyToGrab = true;
-			}else{
-				readyToGrab = false;
-			}
 
 }
 
