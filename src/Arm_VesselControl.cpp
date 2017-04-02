@@ -36,36 +36,38 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	servo5pos_stream = servo5.position_stream();
 	servo6pos_stream = servo6.position_stream();
 
-	dockingPort = tarVessel.parts().with_tag(dpname)[0];
 	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
 	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
 
 	ref_frame_surf = vessel.surface_reference_frame();
 	ref_frame_vessel = vessel.reference_frame();
 	ref_frame = vessel.orbit().body().reference_frame();
-	ref_frame_dockingport = dockingPort.docking_port().reference_frame();
+	setDockingPort(dpname);
 	servoSpeed = 0.2;
 
 	cout << vessel.name() << " successfully created." << endl;
 
 }
 
-//returns if EE in steady state
 void VesselControl::loop(){
 
 
-			if (EE.modules()[1].get_field("State") != "Idle"){
-				grabbing = false;
-				grabbed = true;
-				extendDistance = 0;
-			}else{
-				grabbed = false;
-			}
-		
-			if(grabbing){
-				extendDistance += 0.01;
-			}
+	//check if grabbed
+		if (EE.modules()[1].get_field("State") != "Idle"){
+			grabbing = false;
+			extendDistance = 0;
+			grabbed = true;
+		}else{
+			grabbed = false;
+		}
 
+	//check if grabbing
+		if(grabbing){
+			extendDistance += 0.01;
+		}
+
+
+	//TF
 		TarPos = dockingPort.position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
 		if(grabbed){
@@ -79,71 +81,75 @@ void VesselControl::loop(){
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 		DPDirection = make_tuple(-get<1>(DPDirection),get<0>(DPDirection),-get<2>(DPDirection)); //transform to different base coordinate system
 
-		if (grabbed == true && magnitude(TarPosTF) > 10){
-			tar << 
-				//position
-				0,		//x
-				0,		//y
-				5,		//z
-				//rotation
-				0,		//x
-				PI/2,	//y
-				0;		//z
-		}else if(grabbed == true){
-			tar << 
-				//position
-				get<0>(TargetPosition),		//x
-				get<1>(TargetPosition),		//y
-				get<2>(TargetPosition),		//z
-				//rotation
-				-atan2(-get<1>(DPDirection),-get<2>(DPDirection)),						
-				-atan2(-get<2>(DPDirection),-get<0>(DPDirection)),						
-				-atan2(-get<0>(DPDirection),-get<1>(DPDirection));
 
-		}else{
-			tar << 
-				//position
-				get<0>(TargetPosition),		//x
-				get<1>(TargetPosition),		//y
-				get<2>(TargetPosition),		//z
-				//rotation
-				-atan2(get<1>(DPDirection),get<2>(DPDirection)),						
-				-atan2(get<2>(DPDirection),get<0>(DPDirection)),						
-				-atan2(get<0>(DPDirection),get<1>(DPDirection));
-
-		}
-
-			draw.clear();
-			draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
-
-
-			// assign servo positions
-				JSi << 
-					servo1pos_stream(),
-					servo2pos_stream(),
-					servo3pos_stream(),
-					servo4pos_stream(),
-					servo5pos_stream(),
-					servo6pos_stream();
-
-				JS = CalculatePositions(tar,JSi,true,true);
-					if (JS(0)==999){
-						servogroup.stop();
-						//cout << "out of range!!!!!!!" << endl << endl;
-					}
-					else{
-						servo1.move_to(JS(0),servoSpeed);
-						servo2.move_to(JS(1),servoSpeed);
-						servo3.move_to(JS(2),servoSpeed);
-						servo4.move_to(JS(3),5*servoSpeed);
-						servo5.move_to(JS(4),5*servoSpeed);
-						servo6.move_to(JS(5),5*servoSpeed);
-					}
+	//set EE position
+	if (grabbed){
+		tar << 
+			//position
+			0,		//x
+			0,		//y
+			5,		//z
+			//rotation
+			0,		//x
+			PI/2,	//y
+			0;		//z
 			
+	}else if(grabbed && placing){
+		tar << 
+			//position
+			get<0>(TargetPosition),		//x
+			get<1>(TargetPosition),		//y
+			get<2>(TargetPosition),		//z
+			//rotation
+			-atan2(-get<1>(DPDirection),-get<2>(DPDirection)),						
+			-atan2(-get<2>(DPDirection),-get<0>(DPDirection)),						
+			-atan2(-get<0>(DPDirection),-get<1>(DPDirection));
+
+	}else{
+		tar << 
+			//position
+			get<0>(TargetPosition),		//x
+			get<1>(TargetPosition),		//y
+			get<2>(TargetPosition),		//z
+			//rotation
+			-atan2(get<1>(DPDirection),get<2>(DPDirection)),						
+			-atan2(get<2>(DPDirection),get<0>(DPDirection)),						
+			-atan2(get<0>(DPDirection),get<1>(DPDirection));
+
+	}
+
+	//draw
+	draw.clear();
+	draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
+
+
+	// assign servo positions
+		JSi << 
+			servo1pos_stream(),
+			servo2pos_stream(),
+			servo3pos_stream(),
+			servo4pos_stream(),
+			servo5pos_stream(),
+			servo6pos_stream();
+
+		JS = CalculatePositions(tar,JSi,true,true);
+			if (JS(0)==999){
+				servogroup.stop();
+				//cout << "out of range!!!!!!!" << endl << endl;
+			}
+			else{
+				servo1.move_to(JS(0),servoSpeed);
+				servo2.move_to(JS(1),servoSpeed);
+				servo3.move_to(JS(2),servoSpeed);
+				servo4.move_to(JS(3),5*servoSpeed);
+				servo5.move_to(JS(4),5*servoSpeed);
+				servo6.move_to(JS(5),5*servoSpeed);
+			}
+	
 
 
 
-			Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
+	// Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
 
 
