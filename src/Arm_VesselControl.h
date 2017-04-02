@@ -39,6 +39,7 @@ class VesselControl{
 	
 	private:
 		double extendDistance = 0;
+		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
 		std::tuple<double,double,double>  DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;

@@ -36,14 +36,14 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	servo5pos_stream = servo5.position_stream();
 	servo6pos_stream = servo6.position_stream();
 
-	ref_frame_surf = vessel.surface_reference_frame();
-	ref_frame_vessel = vessel.reference_frame();
-	ref_frame = vessel.orbit().body().reference_frame();
-	ref_frame_dockingport = tarVessel.parts().with_tag(dpname)[0].docking_port().reference_frame();
-
+	dockingPort = tarVessel.parts().with_tag(dpname)[0];
 	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
 	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
 
+	ref_frame_surf = vessel.surface_reference_frame();
+	ref_frame_vessel = vessel.reference_frame();
+	ref_frame = vessel.orbit().body().reference_frame();
+	ref_frame_dockingport = dockingPort.docking_port().reference_frame();
 	servoSpeed = 0.2;
 
 	cout << vessel.name() << " successfully created." << endl;
@@ -74,7 +74,7 @@ void VesselControl::loop(){
 				extendDistance += 0.02;
 			}
 
-		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
+		TarPos = dockingPort.position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
 		if(grabbed){
 			get<1>(TarPosDP) += (2 - extendDistance);
@@ -83,9 +83,9 @@ void VesselControl::loop(){
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
-		DPDirection = tarVessel.parts().with_tag(dpname)[0].docking_port().direction(ref_frame_vessel);
+		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 
-		if (grabbed == true && armMoving == false && magnitude(TarPosTF) > 10){
+		if (grabbed == true && magnitude(TarPosTF) > 10){
 			tar << 
 				//position
 				0,		//x
@@ -95,6 +95,17 @@ void VesselControl::loop(){
 				0,		//x
 				PI/2,	//y
 				0;		//z
+		}else if(grabbed == true){
+			tar << 
+				//position
+				-get<1>(TargetPosition),		//x
+				get<0>(TargetPosition),			//y
+				-get<2>(TargetPosition),		//z
+				//rotation
+				0,		
+				-atan2(get<1>(DPDirection),get<2>(DPDirection)),		//y
+				-atan2(get<1>(DPDirection),get<0>(DPDirection));		//z	
+
 		}else{
 			tar << 
 				//position
@@ -103,7 +114,7 @@ void VesselControl::loop(){
 				-get<2>(TargetPosition),		//z
 				//rotation
 				0,														//x
-				(-1+grabbed*2)*atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
+				-atan2(get<2>(DPDirection),get<1>(DPDirection)),		//y
 				-atan2(get<0>(DPDirection),get<1>(DPDirection));		//z
 		}
 
@@ -133,7 +144,7 @@ void VesselControl::loop(){
 			if (steeringInput(1) == 0 || JS(0)!=999){
 				vessel.control().set_brakes(true);
 				vessel.control().set_wheel_steering(steeringInput(0));
-				vessel.control().set_wheel_throttle(steeringInput(1));
+				vessel.control().set_wheel_throttle(0);
 			}else{
 				vessel.control().set_brakes(false);
 				vessel.control().set_wheel_steering(steeringInput(0));
@@ -175,7 +186,8 @@ void VesselControl::setTarget(string name){
 
 void VesselControl::setDockingPort(string name){
 	dpname = name;
-	ref_frame_dockingport = tarVessel.parts().with_tag(dpname)[0].docking_port().reference_frame();
+	dockingPort = tarVessel.parts().with_tag(dpname)[0];
+	ref_frame_dockingport = dockingPort.docking_port().reference_frame();
 }
 
 VesselControl::~VesselControl(){
