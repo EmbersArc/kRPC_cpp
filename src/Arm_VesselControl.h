@@ -28,11 +28,12 @@ class VesselControl{
 		void setDockingPort(string name);
 		void setTarget(string name);
 		void loop();
+		void MoveArm(Vector6d JS);
 
 		double servoSpeed;
 		bool grabbing = false;
+		bool placing = false;
 		bool grabbed = false;
-		bool armMoving = false;
 		bool readyToGrab = false;
 
 
@@ -44,7 +45,6 @@ class VesselControl{
 		std::tuple<double,double,double>  DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;
 
-		std::tuple<double,double,double>  TarPos;
 
 		double PI = 4*atan(1);
 		krpc::services::SpaceCenter::Vessel findVessel(string name);

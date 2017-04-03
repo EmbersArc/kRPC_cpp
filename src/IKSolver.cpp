@@ -47,7 +47,9 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 	double a,b,c,d,e,f;
 
 
-	while(err.norm() > 0.002 && counter++ < 500){
+	while(err.norm() > 0.0002 && counter < 5000){
+
+		counter++;
 
 			a = JS(0);
 			b = JS(1);
@@ -144,9 +146,9 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 	// to degrees
 	JS = JS * 180 / PI;
 
-	if (counter > 500-1){
+	if (counter == 5000){
 		Vector6d fail;
-		fail << 999,0,0,0,0,0;
+		fail << 999.0,0,0,0,0,0;
 		return fail;
 	}
 	else{

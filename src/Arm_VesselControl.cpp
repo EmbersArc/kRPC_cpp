@@ -43,7 +43,7 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	ref_frame_vessel = vessel.reference_frame();
 	ref_frame = vessel.orbit().body().reference_frame();
 	setDockingPort(dpname);
-	servoSpeed = 0.2;
+	servoSpeed = 0.5;
 
 	cout << vessel.name() << " successfully created." << endl;
 
@@ -61,19 +61,18 @@ void VesselControl::loop(){
 			grabbed = false;
 		}
 
-	//check if grabbing
-		if(grabbing){
+	//check if grabbing or placing
+		if(grabbing || placing){
 			extendDistance += 0.01;
 		}
 
 
 	//TF
-		TarPos = dockingPort.position(ref_frame);
-		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
-		if(grabbed){
-			get<1>(TarPosDP) += (2 - extendDistance);
-		}else{
+		TarPosDP = dockingPort.position(ref_frame_dockingport);
+		if(grabbing){
 			get<1>(TarPosDP) -= (2 - extendDistance);
+		}else if(placing){
+			get<1>(TarPosDP) += (2 - extendDistance);
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
@@ -81,9 +80,33 @@ void VesselControl::loop(){
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 		DPDirection = make_tuple(-get<1>(DPDirection),get<0>(DPDirection),-get<2>(DPDirection)); //transform to different base coordinate system
 
+		//draw
+		draw.clear();
+		draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
+
+	//initial positions
+		// JSi << 0,0,0,0,0,0;
+		JSi << servo1pos_stream(),
+			servo2pos_stream(),
+			servo3pos_stream(),
+			servo4pos_stream(),
+			servo5pos_stream(),
+			servo6pos_stream();
+			
 
 	//set EE position
-	if (grabbed){
+	if(placing){
+		tar << 
+			//position
+			get<0>(TargetPosition),		//x
+			get<1>(TargetPosition),		//y
+			get<2>(TargetPosition),		//z
+			//rotation
+			0,						
+			-atan2(-get<2>(DPDirection),-get<0>(DPDirection)),						
+			-atan2(-get<0>(DPDirection),-get<1>(DPDirection));
+			
+	}else if(grabbed){
 		tar << 
 			//position
 			0,		//x
@@ -94,65 +117,48 @@ void VesselControl::loop(){
 			PI/2,	//y
 			0;		//z
 			
-	}else if(grabbed && placing){
+	}else{ 
 		tar << 
 			//position
 			get<0>(TargetPosition),		//x
 			get<1>(TargetPosition),		//y
 			get<2>(TargetPosition),		//z
 			//rotation
-			-atan2(-get<1>(DPDirection),-get<2>(DPDirection)),						
-			-atan2(-get<2>(DPDirection),-get<0>(DPDirection)),						
-			-atan2(-get<0>(DPDirection),-get<1>(DPDirection));
-
-	}else{
-		tar << 
-			//position
-			get<0>(TargetPosition),		//x
-			get<1>(TargetPosition),		//y
-			get<2>(TargetPosition),		//z
-			//rotation
-			-atan2(get<1>(DPDirection),get<2>(DPDirection)),						
+			0,						
 			-atan2(get<2>(DPDirection),get<0>(DPDirection)),						
 			-atan2(get<0>(DPDirection),get<1>(DPDirection));
-
+			
 	}
 
-	//draw
-	draw.clear();
-	draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
+	JS = CalculatePositions(tar,JSi,true,true);
+		if ( JS(0) != 999.0 ){
+			readyToGrab = true;
+		}else{
+			cout << "fail" << endl;
+			readyToGrab = false;
+			servogroup.stop();
+		}
 
-	// assign servo positions
-		JSi << 
-			servo1pos_stream(),
-			servo2pos_stream(),
-			servo3pos_stream(),
-			servo4pos_stream(),
-			servo5pos_stream(),
-			servo6pos_stream();
-
-		JS = CalculatePositions(tar,JSi,true,true);
-			if (JS(0)==999){
-				servogroup.stop();
-				//cout << "out of range!!!!!!!" << endl << endl;
-			}
-			else{
-				servo1.move_to(JS(0),servoSpeed);
-				servo2.move_to(JS(1),servoSpeed);
-				servo3.move_to(JS(2),servoSpeed);
-				servo4.move_to(JS(3),5*servoSpeed);
-				servo5.move_to(JS(4),5*servoSpeed);
-				servo6.move_to(JS(5),5*servoSpeed);
-			}
-	
-
+		if(grabbing || placing){
+			MoveArm(JS);
+		}
 
 
 	// Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
+}
 
 
+void VesselControl::MoveArm(Vector6d JS){
+
+		servo1.move_to(JS(0),servoSpeed);
+		servo2.move_to(JS(1),servoSpeed);
+		servo3.move_to(JS(2),servoSpeed);
+		servo4.move_to(JS(3),5*servoSpeed);
+		servo5.move_to(JS(4),5*servoSpeed);
+		servo6.move_to(JS(5),5*servoSpeed);
+			
 }
 
 

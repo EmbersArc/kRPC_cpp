@@ -12,24 +12,21 @@ int main() {
 	
 	VesselControl Husky = VesselControl("Husky","1Modular","DP");
 
-	while(true){
-		Husky.loop();
-		if(Husky.readyToGrab){
-			Husky.grabbing = true;
-			cout << "grabbing" << endl;
-			break;
-		}
+
+	while(!Husky.readyToGrab){
+		Husky.loop();	
 	}
 
-	while(true){
+	Husky.grabbing = true;
+	cout << "grabbing" << endl;
+
+	while(!Husky.grabbed){
 		Husky.loop();
-		if(Husky.grabbed){
-			Husky.setTarget("3Modular");
-			Husky.setDockingPort("DP2");
-			cout << "grabbed" << endl;
-			break;
-		}
 	}
+
+	Husky.setTarget("3Modular");
+	Husky.setDockingPort("DP2");
+	cout << "grabbed" << endl;
 
 	while(true){
 		Husky.loop();
