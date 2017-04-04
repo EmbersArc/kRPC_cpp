@@ -33,9 +33,12 @@ class VesselControl{
 		double servoSpeed;
 		bool grabbing = false;
 		bool placing = false;
+		bool movePlease = false;
 		bool grabbed = false;
-		bool readyToGrab = false;
-
+		bool inRange = false;
+		bool inPosition = false;
+		krpc::Stream<double> speed_stream;
+		int vesselCount;
 
 	
 	private:
@@ -43,7 +46,8 @@ class VesselControl{
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
 		std::tuple<double,double,double>  DPDirection;
-		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP;
+		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP, TarPos;
+		krpc::Stream<std::vector<krpc::services::SpaceCenter::Vessel>> vessels_stream;
 
 
 		double PI = 4*atan(1);
