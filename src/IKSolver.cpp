@@ -47,7 +47,7 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 	double a,b,c,d,e,f;
 
 
-	while(err.norm() > 0.0002 && counter < 5000){
+	while(err.norm() > 0.001 && counter < 5000){
 
 		counter++;
 

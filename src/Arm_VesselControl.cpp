@@ -70,7 +70,7 @@ void VesselControl::loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-			extendDistance += 0.01;
+			extendDistance += 0.005;
 		}
 
 
@@ -78,9 +78,9 @@ void VesselControl::loop(){
 		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
 		if(!grabbed){
-			get<1>(TarPosDP) -= (2 - extendDistance);
+			get<1>(TarPosDP) -= (3 - extendDistance);
 		}else{
-			get<1>(TarPosDP) += (2 - extendDistance);
+			get<1>(TarPosDP) += (3 - extendDistance);
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
@@ -92,7 +92,7 @@ void VesselControl::loop(){
 		draw.clear();
 		draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
-		if( magnitude(TarPosTF) < 6){
+		if( magnitude(TarPosTF) < 8){
 			inRange = true;
 		}else{
 			inRange = false;
@@ -129,7 +129,7 @@ void VesselControl::loop(){
 			//position
 			get<0>(TargetPosition),		//x
 			get<1>(TargetPosition),		//y
-			get<2>(TargetPosition) + placing * 0.1,		//z
+			get<2>(TargetPosition) + placing * 0.03,		//z
 			//rotation
 			0,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
@@ -142,12 +142,12 @@ void VesselControl::loop(){
 	JS = CalculatePositions(tar,JSi,true,true);
 
 
-		if( (grabbing || placing || movePlease) ){
+		// if( (grabbing || placing || movePlease) ){
 			MoveArm(JS);
-			movePlease = false;
-		}
+			// movePlease = false;
+		// }
 
-		if( (JSi-JS).norm() < 3 ){
+		if( (JSi-JS).norm() < 6 ){
 			inPosition = true;
 		}else{
 			inPosition = false;
@@ -156,7 +156,7 @@ void VesselControl::loop(){
 
 
 	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream() );
-		if (magnitude(TarPosTF) < 5 || steeringInput(1) == 0){
+		if (magnitude(TarPosTF) < 4.5 || steeringInput(1) == 0){
 			vessel.control().set_brakes(true);
 			vessel.control().set_wheel_steering(steeringInput(0));
 			vessel.control().set_wheel_throttle(0);
@@ -187,7 +187,6 @@ void VesselControl::MoveArm(Vector6d JS){
 		servo5.move_to(JS(4),5*servoSpeed);
 		servo6.move_to(JS(5),5*servoSpeed);
 
-			
 }
 
 
