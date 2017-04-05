@@ -28,7 +28,8 @@ class VesselControl{
 		void setDockingPort(string name);
 		void setTarget(string name);
 		void loop();
-		void MoveArm(Vector6d JS);
+		void MovePlease();
+		void Release();
 
 		double servoSpeed;
 		bool grabbing = false;
@@ -39,9 +40,14 @@ class VesselControl{
 		bool inPosition = false;
 		krpc::Stream<double> speed_stream;
 		int vesselCount;
+		
+		krpc::services::SpaceCenter::Vessel vessel;
 
 	
 	private:
+
+		void MoveArm(Vector6d JS);
+
 		double extendDistance = 0;
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
@@ -57,7 +63,6 @@ class VesselControl{
 		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates
 
-		krpc::services::SpaceCenter::Vessel vessel;
 		krpc::services::SpaceCenter::Vessel tarVessel;
 
 		krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;

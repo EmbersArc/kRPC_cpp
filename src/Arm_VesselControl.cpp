@@ -54,7 +54,7 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 void VesselControl::loop(){
 
 	vesselCount = vessels_stream().size();
-	cout << vesselCount << endl;
+	// cout << vesselCount << endl;
 
 
 	//check if grabbed
@@ -92,7 +92,7 @@ void VesselControl::loop(){
 		draw.clear();
 		draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
-		if( magnitude(TarPosTF) < 7){
+		if( magnitude(TarPosTF) < 6){
 			inRange = true;
 		}else{
 			inRange = false;
@@ -140,15 +140,6 @@ void VesselControl::loop(){
 
 
 	JS = CalculatePositions(tar,JSi,true,true);
-		// if ( JS(0) != 999.0 ){
-		// 	inRange = true;
-		// }else{
-		// 	// cout << "fail" << endl;
-		// 	inRange = false;
-		// 	JS = JSi;
-		// 	// servogroup.stop();
-		// }
-
 
 
 		if( (grabbing || placing || movePlease) ){
@@ -162,8 +153,28 @@ void VesselControl::loop(){
 			inPosition = false;
 		}
 
-	// Vector2d steeringInput = CalculateWheelTorque( TarPosTF , vessel.flight(ref_frame).speed() );
 
+
+	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream() );
+		if (magnitude(TarPosTF) < 5 || steeringInput(1) == 0){
+			vessel.control().set_brakes(true);
+			vessel.control().set_wheel_steering(steeringInput(0));
+			vessel.control().set_wheel_throttle(0);
+		}
+		else{
+			vessel.control().set_brakes(false);
+			vessel.control().set_wheel_steering(steeringInput(0));
+			vessel.control().set_wheel_throttle(steeringInput(1));
+		}
+
+}
+
+void VesselControl::Release(){
+	EE.modules()[1].set_action("Detach",true);
+}
+
+void VesselControl::MovePlease(){
+	movePlease = true;
 }
 
 

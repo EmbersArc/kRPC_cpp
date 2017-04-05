@@ -14,12 +14,12 @@ int main() {
 
 	int vesselCountCurrent = Husky.vesselCount;
 
-	while(!Husky.inRange){
+	while(!Husky.inRange || Husky.speed_stream() > 0.05 ){
 		Husky.loop();	
 	}
 
 	cout << "moving" << endl;
-	Husky.movePlease = true;
+	Husky.MovePlease();
 
 	while(!Husky.inPosition){
 		Husky.loop();
@@ -35,30 +35,20 @@ int main() {
 	Husky.setDockingPort("DP2");
 	cout << "grabbed" << endl;
 
-	Husky.movePlease = true;
+	Husky.MovePlease();
 
 	cout << "moving" << endl;
 
-	while(!Husky.inRange){
-			Husky.movePlease = true;
-
+	while(!Husky.inRange || Husky.vessel.control().brakes() == true ){
+		cout << Husky.speed_stream() << endl;
 		Husky.loop();	
 	}
 
-	Husky.movePlease = true;
+	Husky.MovePlease();
 
 	while(!Husky.inPosition){
 		Husky.loop();
 	}
-
-	cout << "ehh" << endl;
-
-	while(!Husky.inRange || Husky.speed_stream() > 0.05){
-		Husky.loop();	
-	}
-
-	cout << "ehh" << endl;
-
 
 	Husky.placing = true;
 
@@ -68,6 +58,8 @@ int main() {
 	}
 
 	vesselCountCurrent--;
+
+	Husky.Release();
 
 	// yay
 	cout << "----DONE----" << endl;
