@@ -35,7 +35,6 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	servo4pos_stream = servo4.position_stream();
 	servo5pos_stream = servo5.position_stream();
 	servo6pos_stream = servo6.position_stream();
-	speed_stream = vessel.flight(ref_frame).speed_stream();
 	vessels_stream = sct.vessels_stream();
 
 	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
@@ -44,14 +43,15 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	ref_frame_surf = vessel.surface_reference_frame();
 	ref_frame_vessel = vessel.reference_frame();
 	ref_frame = vessel.orbit().body().reference_frame();
+	speed_stream = vessel.flight(ref_frame).speed_stream();
 	setDockingPort(dpname);
-	servoSpeed = 0.5;
+	servoSpeed = 0.3;
 
 	cout << vessel.name() << " successfully created." << endl;
 
 }
 
-void VesselControl::loop(){
+void VesselControl::Loop(){
 
 	vesselCount = vessels_stream().size();
 	// cout << vesselCount << endl;
@@ -70,7 +70,9 @@ void VesselControl::loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-			extendDistance += 0.005;
+			extendDistance += 0.002;
+		}else{
+			extendDistance = 0;
 		}
 
 
@@ -86,13 +88,14 @@ void VesselControl::loop(){
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
 		TargetPosition = make_tuple(-get<1>(TargetPosition),get<0>(TargetPosition),-get<2>(TargetPosition)); //transform to different base coordinate system
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
-		// DPDirection = make_tuple(-get<1>(DPDirection),get<0>(DPDirection),-get<2>(DPDirection)); //transform to different base coordinate system
+		distanceFromTarget = magnitude(TarPosTF);
+
 
 		//draw
 		draw.clear();
 		draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
 
-		if( magnitude(TarPosTF) < 8){
+		if( magnitude(TarPosTF) < 10){
 			inRange = true;
 		}else{
 			inRange = false;
@@ -121,7 +124,7 @@ void VesselControl::loop(){
 			5,		//z
 			//rotation
 			0,		//x
-			PI/2,		//y
+			PI/2,	//y
 			0;		//z
 			
 	}else{ 
@@ -129,9 +132,9 @@ void VesselControl::loop(){
 			//position
 			get<0>(TargetPosition),		//x
 			get<1>(TargetPosition),		//y
-			get<2>(TargetPosition) + placing * 0.03,		//z
+			get<2>(TargetPosition) + placing * 0.1,		//z
 			//rotation
-			0,						
+			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
 			-atan2(get<0>(DPDirection),get<1>(DPDirection));
 			
@@ -142,12 +145,9 @@ void VesselControl::loop(){
 	JS = CalculatePositions(tar,JSi,true,true);
 
 
-		// if( (grabbing || placing || movePlease) ){
-			MoveArm(JS);
-			// movePlease = false;
-		// }
 
-		if( (JSi-JS).norm() < 6 ){
+
+		if( (JSi-JS).norm() < 10 ){
 			inPosition = true;
 		}else{
 			inPosition = false;
@@ -155,17 +155,7 @@ void VesselControl::loop(){
 
 
 
-	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream() );
-		if (magnitude(TarPosTF) < 4.5 || steeringInput(1) == 0){
-			vessel.control().set_brakes(true);
-			vessel.control().set_wheel_steering(steeringInput(0));
-			vessel.control().set_wheel_throttle(0);
-		}
-		else{
-			vessel.control().set_brakes(false);
-			vessel.control().set_wheel_steering(steeringInput(0));
-			vessel.control().set_wheel_throttle(steeringInput(1));
-		}
+
 
 }
 
@@ -173,16 +163,13 @@ void VesselControl::Release(){
 	EE.modules()[1].set_action("Detach",true);
 }
 
-void VesselControl::MovePlease(){
-	movePlease = true;
-}
 
 
-void VesselControl::MoveArm(Vector6d JS){
+void VesselControl::MoveArm(){
 
-		servo1.move_to(JS(0),servoSpeed);
-		servo2.move_to(JS(1),servoSpeed);
-		servo3.move_to(JS(2),servoSpeed);
+		servo1.move_to(JS(0),3*servoSpeed);
+		servo2.move_to(JS(1),3*servoSpeed);
+		servo3.move_to(JS(2),3*servoSpeed);
 		servo4.move_to(JS(3),5*servoSpeed);
 		servo5.move_to(JS(4),5*servoSpeed);
 		servo6.move_to(JS(5),5*servoSpeed);
@@ -200,6 +187,23 @@ krpc::services::SpaceCenter::Vessel VesselControl::findVessel(string name){
 		}
 	}
 	return vessel;
+}
+
+void VesselControl::Drive(){
+
+
+	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream() );
+		if (steeringInput(1) == 0){
+			vessel.control().set_brakes(true);
+			vessel.control().set_wheel_steering(steeringInput(0));
+			vessel.control().set_wheel_throttle(0);
+		}
+		else{
+			vessel.control().set_brakes(false);
+			vessel.control().set_wheel_steering(steeringInput(0));
+			vessel.control().set_wheel_throttle(steeringInput(1));
+		}
+	
 }
 
 

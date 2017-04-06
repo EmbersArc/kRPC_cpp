@@ -27,28 +27,30 @@ class VesselControl{
 
 		void setDockingPort(string name);
 		void setTarget(string name);
-		void loop();
+		void Loop();
 		void MovePlease();
 		void Release();
+		void MoveArm();
+		void Drive();
+
 
 		double servoSpeed;
 		bool grabbing = false;
 		bool placing = false;
-		bool movePlease = false;
 		bool grabbed = false;
 		bool inRange = false;
 		bool inPosition = false;
 		krpc::Stream<double> speed_stream;
 		int vesselCount;
-		
+		double extendDistance = 0;
+		double distanceFromTarget = 10;
+
 		krpc::services::SpaceCenter::Vessel vessel;
 
 	
 	private:
 
-		void MoveArm(Vector6d JS);
 
-		double extendDistance = 0;
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
 		std::tuple<double,double,double>  DPDirection;

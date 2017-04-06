@@ -3,8 +3,8 @@
 
 Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double speed){
 
-    double Ka = 10;
-    double Kd = 0.01;
+    double Ka = 3;
+    double Kd = 0.03;
     double angError;
     double speedAdjust;
     double steerAdjust;
@@ -28,15 +28,13 @@ Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double spee
 
     steerAdjust = -angError*Ka;
 
-    if( abs(angError) > 0.1 || distError < 7 ){
+    if( abs(angError) > 0.1 || distError < 5 ){
         speedAdjust = 0;
     }
 
-    if( abs(speed) > 0.8 ){
-        speedAdjust *= -1;
+    if( abs(speed) > 0.7 ){
+        speedAdjust = 0;
     }
-
-
 
     return Vector2d(steerAdjust,speedAdjust);
 
