@@ -77,6 +77,7 @@ void VesselControl::Loop(){
 
 
 	//TF
+		// TarPosBase = vessel.position(ref_frame);
 		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
 		if(!grabbed){
@@ -101,14 +102,7 @@ void VesselControl::Loop(){
 			inRange = false;
 		}
 
-	//initial positions
-		// JSi << 0,0,0,0,0,0;
-		JSi << servo1pos_stream(),
-			servo2pos_stream(),
-			servo3pos_stream(),
-			servo4pos_stream(),
-			servo5pos_stream(),
-			servo6pos_stream();
+	
 			
 
 	//set EE position
@@ -116,7 +110,23 @@ void VesselControl::Loop(){
 		DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
 	}
 	
-	if( !inRange ){
+	if( inRange ){
+		tar << 
+			//position
+			get<0>(TargetPosition),		//x
+			get<1>(TargetPosition),		//y
+			get<2>(TargetPosition) + placing * 0.3,		//z
+			//rotation
+			PI/2 * placing,						
+			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
+			-atan2(get<0>(DPDirection),get<1>(DPDirection));
+			
+			// cout << tar(4) << "    " << tar(5) << endl;
+
+			// cout << tar << endl;
+
+			
+	}else{ 
 		tar << 
 			//position
 			0,		//x
@@ -124,37 +134,38 @@ void VesselControl::Loop(){
 			5,		//z
 			//rotation
 			0,		//x
-			PI/2,	//y
+			0,		//y
 			0;		//z
-			
-	}else{ 
-		tar << 
-			//position
-			get<0>(TargetPosition),		//x
-			get<1>(TargetPosition),		//y
-			get<2>(TargetPosition) + placing * 0.1,		//z
-			//rotation
-			PI/2 * placing,						
-			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
-			-atan2(get<0>(DPDirection),get<1>(DPDirection));
-			
-			// cout << tar(4) << "    " << tar(5) << endl;
 	}
 
+	if(resetJSi){
+		JSi << 0,0,0,0,0,0;
+		resetJSi = false;
+	}else{
+		JSi << 	servo1pos_stream(),
+				servo2pos_stream(),
+				servo3pos_stream(),
+				servo4pos_stream(),
+				servo5pos_stream(),
+				servo6pos_stream();
+	}
 
-	JS = CalculatePositions(tar,JSi,true,true);
+	JScurr << 	servo1pos_stream(),
+				servo2pos_stream(),
+				servo3pos_stream(),
+				servo4pos_stream(),
+				servo5pos_stream(),
+				servo6pos_stream();
+
+		JS = CalculatePositions(tar,JSi,true,true);
 
 
-
-
-		if( (JSi-JS).norm() < 10 ){
+		if( (JScurr-JS).norm() < 10 ){
 			inPosition = true;
 		}else{
 			inPosition = false;
+			cout << (JSi-JS) << endl << endl;
 		}
-
-
-
 
 
 }
@@ -163,16 +174,31 @@ void VesselControl::Release(){
 	EE.modules()[1].set_action("Detach",true);
 }
 
+void VesselControl::ResetJSi(){
+	resetJSi = true;
+}
 
+bool VesselControl::ServosMoving(){
+
+	return(
+		servo1.is_moving() ||
+		servo2.is_moving() ||
+		servo3.is_moving() ||
+		servo4.is_moving() ||
+		servo5.is_moving() ||
+		servo6.is_moving()
+	);
+
+}
 
 void VesselControl::MoveArm(){
 
 		servo1.move_to(JS(0),3*servoSpeed);
 		servo2.move_to(JS(1),3*servoSpeed);
 		servo3.move_to(JS(2),3*servoSpeed);
-		servo4.move_to(JS(3),5*servoSpeed);
-		servo5.move_to(JS(4),5*servoSpeed);
-		servo6.move_to(JS(5),5*servoSpeed);
+		servo4.move_to(JS(3),6*servoSpeed);
+		servo5.move_to(JS(4),6*servoSpeed);
+		servo6.move_to(JS(5),6*servoSpeed);
 
 }
 

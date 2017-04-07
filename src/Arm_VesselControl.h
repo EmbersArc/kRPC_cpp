@@ -32,6 +32,8 @@ class VesselControl{
 		void Release();
 		void MoveArm();
 		void Drive();
+		bool ServosMoving();
+		void ResetJSi();
 
 
 		double servoSpeed;
@@ -40,12 +42,15 @@ class VesselControl{
 		bool grabbed = false;
 		bool inRange = false;
 		bool inPosition = false;
+		bool resetJSi = false;
 		krpc::Stream<double> speed_stream;
 		int vesselCount;
 		double extendDistance = 0;
 		double distanceFromTarget = 10;
 
 		krpc::services::SpaceCenter::Vessel vessel;
+		krpc::services::SpaceCenter::Vessel tarVessel;
+
 
 	
 	private:
@@ -62,10 +67,9 @@ class VesselControl{
 		krpc::services::SpaceCenter::Vessel findVessel(string name);
 
 		Vector6d JSi; 	//Joint space coordinates initial
+		Vector6d JScurr; 	//Joint space coordinates current
 		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates
-
-		krpc::services::SpaceCenter::Vessel tarVessel;
 
 		krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
 		krpc::services::SpaceCenter::ReferenceFrame ref_frame_vessel;

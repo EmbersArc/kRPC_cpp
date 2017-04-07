@@ -7,7 +7,7 @@ using std::cout;
 using std::endl;
 
 Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool located){
-
+	
 	if(!oriented){
 		tar.tail(3) << 0,0,0;
 	}
