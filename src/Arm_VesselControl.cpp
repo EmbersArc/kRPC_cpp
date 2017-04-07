@@ -56,6 +56,7 @@ void VesselControl::Loop(){
 	vesselCount = vessels_stream().size();
 	// cout << vesselCount << endl;
 
+	ForeVector = sct.transform_direction(make_tuple(0,1,0), ref_frame, ref_frame_surf);
 
 	//check if grabbed
 		if (EE.modules()[1].get_field("State") != "Idle"){
@@ -189,21 +190,25 @@ krpc::services::SpaceCenter::Vessel VesselControl::findVessel(string name){
 	return vessel;
 }
 
-void VesselControl::Drive(){
+bool VesselControl::Drive(string dir){
 
 
-	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream() );
+	Vector2d steeringInput = CalculateWheelTorque( TarPosTF , speed_stream(), ForeVector, dir);
 		if (steeringInput(1) == 0){
 			vessel.control().set_brakes(true);
 			vessel.control().set_wheel_steering(steeringInput(0));
 			vessel.control().set_wheel_throttle(0);
+			return false;
 		}
-		else{
+		else if(steeringInput(1) == 999){
+			return true;
+		}else{
 			vessel.control().set_brakes(false);
 			vessel.control().set_wheel_steering(steeringInput(0));
 			vessel.control().set_wheel_throttle(steeringInput(1));
+			return false;
 		}
-	
+
 }
 
 

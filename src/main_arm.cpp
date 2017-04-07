@@ -12,9 +12,8 @@ int main() {
 	
 	VesselControl Husky = VesselControl("Husky","Tank","DP");
 
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+	while( !Husky.Drive("west") || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive();
 	}
 	
 	Husky.MoveArm();
@@ -36,9 +35,8 @@ int main() {
 	Husky.MoveArm();
 
 	
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+	while( !Husky.Drive("east") || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive();
 	}
 
 
@@ -66,9 +64,8 @@ int main() {
 	Husky.setDockingPort("DP");
 
 
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+	while( !Husky.Drive("west") || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive();
 	}
 
 	Husky.MoveArm();
@@ -88,14 +85,11 @@ int main() {
 	Husky.setTarget("Tower");
 	Husky.setDockingPort("TankLowerDP");
 
-	while(Husky.distanceFromTarget > 4 || Husky.speed_stream() > 0.02){
+	while(	!Husky.Drive("north") || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive();
 	}
-	cout << "trying now" << endl;
 
 	Husky.MoveArm();
-	cout << "tried" << endl;
 
 	while(!Husky.inPosition){
 		Husky.Loop();

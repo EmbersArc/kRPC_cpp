@@ -31,7 +31,7 @@ class VesselControl{
 		void MovePlease();
 		void Release();
 		void MoveArm();
-		void Drive();
+		bool Drive(string dir);
 
 
 		double servoSpeed;
@@ -55,6 +55,7 @@ class VesselControl{
 		string dpname;
 		std::tuple<double,double,double>  DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP, TarPos;
+		std::tuple<double,double,double> ForeVector;
 		krpc::Stream<std::vector<krpc::services::SpaceCenter::Vessel>> vessels_stream;
 
 
