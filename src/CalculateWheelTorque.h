@@ -8,4 +8,4 @@ using std::cout;
 using std::endl;
 
 
-Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double speed);
+Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double speed, double range);

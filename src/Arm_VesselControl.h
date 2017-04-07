@@ -31,11 +31,15 @@ class VesselControl{
 		void MovePlease();
 		void Release();
 		void MoveArm();
-		void Drive();
+		void Drive(double range);
 		bool ServosMoving();
 		void ResetJSi();
+		void ChangeFocus();
+		double baseDist = 3;
 
 
+
+		double weightCompensation = 0.4;
 		double servoSpeed;
 		bool grabbing = false;
 		bool placing = false;
@@ -50,6 +54,7 @@ class VesselControl{
 
 		krpc::services::SpaceCenter::Vessel vessel;
 		krpc::services::SpaceCenter::Vessel tarVessel;
+		krpc::services::SpaceCenter::Part Claw; 		//the claw joint
 
 
 	
@@ -68,6 +73,7 @@ class VesselControl{
 
 		Vector6d JSi; 	//Joint space coordinates initial
 		Vector6d JScurr; 	//Joint space coordinates current
+		Vector6d JSsp; 	//Joint space coordinates current
 		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates
 

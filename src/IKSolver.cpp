@@ -19,14 +19,14 @@ Vector6d CalculatePositions(Vector6d tar, Vector6d JS, bool oriented, bool locat
 	
 	double PI = 4*atan(1);
 
-    double jointLength0 = 0.55; //m
-    double jointLength1 = 0.59; //m
+    double jointLength0 = 0.44; //m 0.44
+    double jointLength1 = 0; //m 0.59
     double jointLength2 = 2.61; //m
-    double jointLength3 = 0.59; //m
+    double jointLength3 = 0; //m
     double jointLength4 = 2.61; //m
-    double jointLength5 = 0.59; //m
-    double jointLength6 = 0.59; //m
-    double jointLength7 = 1.78; //m
+    double jointLength5 = 0.7; //m
+    double jointLength6 = 0.7; //m
+    double jointLength7 = 1.8; //m
 
 	int counter = 0;
 
