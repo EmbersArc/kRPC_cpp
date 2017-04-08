@@ -22,6 +22,7 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	vessel = findVessel(name);
 	tarVessel = findVessel(tarname);
 
+
 	servogroup = ir.servo_group_with_name(vessel, "servos");
 	servo1 = servogroup.servo_with_name("a");
 	servo2 = servogroup.servo_with_name("b");
@@ -72,8 +73,12 @@ void VesselControl::Loop(){
 	//check if grabbing or placing
 		if(grabbing || placing){
 			extendDistance += 0.003;
+
 		}else{
 			extendDistance = 0;
+			xcorr = 0;
+			ycorr = 0;
+			zcorr = 0;
 		}
 
 
@@ -88,10 +93,17 @@ void VesselControl::Loop(){
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
-		TargetPosition = make_tuple(-get<1>(TargetPosition),get<0>(TargetPosition),-get<2>(TargetPosition)); //transform to different base coordinate system
+		EECurrentPosition = vectorSubtract(EE.position(ref_frame_vessel),Base.position(ref_frame_vessel));
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 		distanceFromTarget = magnitude(TarPosTF);
 
+		if(grabbing || placing){
+
+
+			xcorr = PIDxcorr.calculate(-get<1>(EECurrentPosition), -get<1>(TargetPosition));
+			ycorr = PIDycorr.calculate(get<0>(EECurrentPosition), get<0>(TargetPosition));
+			zcorr = PIDzcorr.calculate(-get<2>(EECurrentPosition), -get<2>(TargetPosition));
+		}
 
 		//draw
 		draw.clear();
@@ -114,13 +126,15 @@ void VesselControl::Loop(){
 	if( inRange ){
 		tar << 
 			//position
-			get<0>(TargetPosition),		//x
-			get<1>(TargetPosition),		//y
-			get<2>(TargetPosition) + placing * weightCompensation,		//z
+			-get<1>(TargetPosition) - xcorr,		//x
+			get<0>(TargetPosition) - ycorr,		//y
+			-get<2>(TargetPosition) - zcorr,		//z
 			//rotation
 			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
 			-atan2(get<0>(DPDirection),get<1>(DPDirection));
+
+			cout << xcorr << "    " << ycorr << "		" << zcorr << endl;
 		
 	}else{ 
 		tar << 

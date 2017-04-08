@@ -124,7 +124,6 @@ int main() {
 		Husky.Loop();
 	}
 
-	Husky.weightCompensation = 0.15;
 	Husky.placing = true;
 
 	while(Husky.vesselCount != 7){
@@ -211,4 +210,3 @@ while(Husky.distanceFromTarget > 14){
 
 
 }
-

@@ -14,6 +14,7 @@
 #include "TupleOperations.h"
 #include "IKSolver.h"
 #include "CalculateWheelTorque.h"
+#include "pid.h"
 
 using namespace std;
 	
@@ -39,7 +40,6 @@ class VesselControl{
 
 
 
-		double weightCompensation = 0.4;
 		double servoSpeed;
 		bool grabbing = false;
 		bool placing = false;
@@ -60,11 +60,16 @@ class VesselControl{
 	
 	private:
 
+		double xcorr, ycorr, zcorr;
+		PID PIDxcorr = PID(1,-1,0.02,0.05,0);
+		PID PIDycorr = PID(1,-1,0.02,0.05,0);
+		PID PIDzcorr = PID(1,-1,0.01,0.02,0);
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
 		std::tuple<double,double,double>  DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP, TarPos;
+		std::tuple<double,double,double> DPTargetPosition, EECurrentPosition;
 		krpc::Stream<std::vector<krpc::services::SpaceCenter::Vessel>> vessels_stream;
 
 
