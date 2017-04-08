@@ -77,22 +77,26 @@ void VesselControl::Loop(){
 			extendDistance += 0.002;
 		}else{
 			extendDistance = 0;
-			xcorr = 0;
-			ycorr = 0;
-			zcorr = 0;
 		}
 
 
-		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
-		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
+		// create distance in docking port reference frame
 		if(!grabbed){
-			get<1>(TarPosDP) -= (baseDist - extendDistance);
+			dpDist = make_tuple(0,-(baseDist - extendDistance),0);
 		}else{
-			get<1>(TarPosDP) += (baseDist - extendDistance);
+			dpDist = make_tuple(0,(baseDist - extendDistance),0);
 		}
-		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
-		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
+
+		// transform to vessel reference frame
+		TarPosTF = sct.transform_position(dpDist,ref_frame_dockingport,ref_frame_vessel);
+
+		// make relative to base link
+		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel));
+
+		// find EE position relative to base link
 		EECurrentPosition = vectorSubtract(ee_pos_stream(),Base.position(ref_frame_vessel));
+
+		// find docking port direction
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 		distanceFromTarget = magnitude(TarPosTF);
 
@@ -101,11 +105,18 @@ void VesselControl::Loop(){
 			xcorr = PIDxcorr.calculate(get<0>(TargetPosition), get<0>(EECurrentPosition));
 			ycorr = PIDycorr.calculate(get<1>(TargetPosition), get<1>(EECurrentPosition));
 			zcorr = PIDzcorr.calculate(get<2>(TargetPosition), get<2>(EECurrentPosition));
-		}
+
+			TargetPosition = make_tuple(get<0>(TargetPosition) + xcorr, get<1>(TargetPosition) + ycorr, get<2>(TargetPosition) + zcorr);
+
+		}else{			
+			xcorr = 0;
+			ycorr = 0;
+			zcorr = 0;
+			}
 
 		//draw
 		draw.clear();
-		draw.add_line(Base.position(ref_frame_vessel),TarPosTF,ref_frame_vessel,true);
+		draw.add_line( make_tuple(0,0,0), TarPosTF ,ref_frame_vessel ,true);
 
 		if( magnitude(TarPosTF) < 10){
 			inRange = true;
@@ -122,9 +133,9 @@ void VesselControl::Loop(){
 	if( inRange ){
 		tar << 
 			//position
-			-(get<1>(TargetPosition) + ycorr),		//x
-			(get<0>(TargetPosition) + xcorr),			//y
-			-(get<2>(TargetPosition) + zcorr),		//z
+			-(get<1>(TargetPosition)),		//x
+			(get<0>(TargetPosition)),			//y
+			-(get<2>(TargetPosition)),		//z
 			//rotation
 			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
@@ -166,11 +177,6 @@ void VesselControl::Loop(){
 		JS = CalculatePositions(tar,JSi,true,true);
 
 
-		// if( (JScurr-JSsp).norm() < 10 ){
-		// 	inPosition = true;
-		// }else{
-		// 	inPosition = false;
-		// }
 		if( !ServosMoving() ){
 			inPosition = true;
 		}else{
@@ -214,7 +220,7 @@ void VesselControl::MoveArm(double servoSpeed){
 		servo3.move_to(JS(2),3*servoSpeed);
 		servo4.move_to(JS(3),6*servoSpeed);
 		servo5.move_to(JS(4),6*servoSpeed);
-		servo6.move_to(JS(5),6*servoSpeed);
+		servo6.move_to(JS(5),15*servoSpeed);
 
 }
 

@@ -60,8 +60,8 @@ class VesselControl{
 	private:
 
 		double xcorr, ycorr, zcorr;
-		PID PIDxcorr = PID(1,-1,0.05,0.2,0.1);
-		PID PIDycorr = PID(1,-1,0.05,0.2,0.1);
+		PID PIDxcorr = PID(1,-1,0.05,0.1,0.1);
+		PID PIDycorr = PID(1,-1,0.05,0.1,0.1);
 		PID PIDzcorr = PID(1,-1,0.1,0.4,0.2);
 
 		krpc::services::SpaceCenter::Part dockingPort;
@@ -72,6 +72,7 @@ class VesselControl{
 		krpc::Stream<std::vector<krpc::services::SpaceCenter::Vessel>> vessels_stream;
 		krpc::Stream<std::tuple<double,double,double>> ee_pos_stream;
 
+		std::tuple<double,double,double> dpDist;
 
 		double PI = 4*atan(1);
 		krpc::services::SpaceCenter::Vessel findVessel(string name);

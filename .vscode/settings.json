@@ -29,6 +29,10 @@
         "vector": "cpp",
         "core": "cpp",
         "slist": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "utility": "cpp"
     }
 }
