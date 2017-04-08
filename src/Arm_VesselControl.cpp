@@ -75,7 +75,7 @@ void VesselControl::Loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-			extendDistance += 0.002;
+			extendDistance += 0.004;
 		}else{
 			extendDistance = 0;
 		}
@@ -91,7 +91,7 @@ void VesselControl::Loop(){
 		// transform to vessel reference frame
 		TarPosTF = sct.transform_position(dpDist,ref_frame_dockingport,ref_frame_vessel);
 		distanceFromTarget = magnitude(TarPosTF);
-
+		cout << distanceFromTarget << endl ;
 
 		// make relative to base link
 		TarPosTF = vectorSubtract(TarPosTF,base_pos);
@@ -145,7 +145,7 @@ void VesselControl::Loop(){
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
 			-atan2(get<0>(DPDirection),get<1>(DPDirection));
 
-			cout << PIDxcorr.lastError() << "    " << PIDycorr.lastError() << "    " << PIDzcorr.lastError() << endl;
+			// cout << PIDxcorr.lastError() << "    " << PIDycorr.lastError() << "    " << PIDzcorr.lastError() << endl;
 		
 	}else{ 
 		tar << 
