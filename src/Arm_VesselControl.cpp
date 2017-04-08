@@ -99,10 +99,9 @@ void VesselControl::Loop(){
 
 		if(grabbing || placing){
 
-
-			xcorr = PIDxcorr.calculate(-get<1>(EECurrentPosition), -get<1>(TargetPosition));
-			ycorr = PIDycorr.calculate(get<0>(EECurrentPosition), get<0>(TargetPosition));
-			zcorr = PIDzcorr.calculate(-get<2>(EECurrentPosition), -get<2>(TargetPosition));
+			xcorr = PIDxcorr.calculate(-get<1>(TargetPosition), -get<1>(EECurrentPosition));
+			ycorr = PIDycorr.calculate(get<0>(TargetPosition), get<0>(EECurrentPosition));
+			zcorr = PIDzcorr.calculate(-get<2>(TargetPosition), -get<2>(EECurrentPosition));
 		}
 
 		//draw
@@ -116,8 +115,6 @@ void VesselControl::Loop(){
 		}
 
 	
-			
-
 	//set EE position
 	if(placing || grabbed){
 		DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
@@ -126,9 +123,9 @@ void VesselControl::Loop(){
 	if( inRange ){
 		tar << 
 			//position
-			-get<1>(TargetPosition) - xcorr,		//x
-			get<0>(TargetPosition) - ycorr,		//y
-			-get<2>(TargetPosition) - zcorr,		//z
+			-get<1>(TargetPosition) + xcorr,		//x
+			get<0>(TargetPosition) + ycorr,		//y
+			-get<2>(TargetPosition) + zcorr,		//z
 			//rotation
 			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						

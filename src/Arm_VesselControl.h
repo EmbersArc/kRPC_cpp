@@ -54,16 +54,16 @@ class VesselControl{
 
 		krpc::services::SpaceCenter::Vessel vessel;
 		krpc::services::SpaceCenter::Vessel tarVessel;
-		krpc::services::SpaceCenter::Part Claw; 		//the claw joint
+		// krpc::services::SpaceCenter::Part Claw; 		//the claw joint
 
 
 	
 	private:
 
 		double xcorr, ycorr, zcorr;
-		PID PIDxcorr = PID(1,-1,0.02,0.05,0);
-		PID PIDycorr = PID(1,-1,0.02,0.05,0);
-		PID PIDzcorr = PID(1,-1,0.01,0.02,0);
+		PID PIDxcorr = PID(1,-1,0.2,0.1,0.1);
+		PID PIDycorr = PID(1,-1,0.2,0.1,0.1);
+		PID PIDzcorr = PID(1,-1,0.2,0.1,0.1);
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
