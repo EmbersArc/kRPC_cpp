@@ -22,6 +22,15 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	vessel = findVessel(name);
 	tarVessel = findVessel(tarname);
 
+	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
+	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
+	// Claw = tarVessel.parts().with_tag("Claw")[0]; 		//the base joint
+
+
+	ref_frame_surf = vessel.surface_reference_frame();
+	ref_frame_vessel = vessel.reference_frame();
+	ref_frame = vessel.orbit().body().reference_frame();
+	speed_stream = vessel.flight(ref_frame).speed_stream();
 
 	servogroup = ir.servo_group_with_name(vessel, "servos");
 	servo1 = servogroup.servo_with_name("a");
@@ -37,17 +46,10 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	servo5pos_stream = servo5.position_stream();
 	servo6pos_stream = servo6.position_stream();
 	vessels_stream = sct.vessels_stream();
+	ee_pos_stream = EE.position_stream(ref_frame_vessel);
 
-	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
-	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
-	// Claw = tarVessel.parts().with_tag("Claw")[0]; 		//the base joint
 
-	ref_frame_surf = vessel.surface_reference_frame();
-	ref_frame_vessel = vessel.reference_frame();
-	ref_frame = vessel.orbit().body().reference_frame();
-	speed_stream = vessel.flight(ref_frame).speed_stream();
 	setDockingPort(dpname);
-	servoSpeed = 0.2;
 
 	cout << vessel.name() << " successfully created." << endl;
 
@@ -72,8 +74,7 @@ void VesselControl::Loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-			extendDistance += 0.003;
-
+			extendDistance += 0.002;
 		}else{
 			extendDistance = 0;
 			xcorr = 0;
@@ -82,8 +83,6 @@ void VesselControl::Loop(){
 		}
 
 
-	//TF
-		// TarPosBase = vessel.position(ref_frame);
 		TarPos = tarVessel.parts().with_tag(dpname)[0].position(ref_frame);
 		TarPosDP = sct.transform_position(TarPos,ref_frame,ref_frame_dockingport);
 		if(!grabbed){
@@ -93,15 +92,15 @@ void VesselControl::Loop(){
 		}
 		TarPosTF = sct.transform_position(TarPosDP,ref_frame_dockingport,ref_frame_vessel);
 		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel)); //position relative to base
-		EECurrentPosition = vectorSubtract(EE.position(ref_frame_vessel),Base.position(ref_frame_vessel));
+		EECurrentPosition = vectorSubtract(ee_pos_stream(),Base.position(ref_frame_vessel));
 		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 		distanceFromTarget = magnitude(TarPosTF);
 
 		if(grabbing || placing){
 
-			xcorr = PIDxcorr.calculate(-get<1>(TargetPosition), -get<1>(EECurrentPosition));
-			ycorr = PIDycorr.calculate(get<0>(TargetPosition), get<0>(EECurrentPosition));
-			zcorr = PIDzcorr.calculate(-get<2>(TargetPosition), -get<2>(EECurrentPosition));
+			xcorr = PIDxcorr.calculate(get<0>(TargetPosition), get<0>(EECurrentPosition));
+			ycorr = PIDycorr.calculate(get<1>(TargetPosition), get<1>(EECurrentPosition));
+			zcorr = PIDzcorr.calculate(get<2>(TargetPosition), get<2>(EECurrentPosition));
 		}
 
 		//draw
@@ -123,15 +122,15 @@ void VesselControl::Loop(){
 	if( inRange ){
 		tar << 
 			//position
-			-get<1>(TargetPosition) + xcorr,		//x
-			get<0>(TargetPosition) + ycorr,		//y
-			-get<2>(TargetPosition) + zcorr,		//z
+			-(get<1>(TargetPosition) + ycorr),		//x
+			(get<0>(TargetPosition) + xcorr),			//y
+			-(get<2>(TargetPosition) + zcorr),		//z
 			//rotation
 			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
 			-atan2(get<0>(DPDirection),get<1>(DPDirection));
 
-			cout << xcorr << "    " << ycorr << "		" << zcorr << endl;
+			cout << PIDxcorr.lastError() << "    " << PIDycorr.lastError() << "    " << PIDzcorr.lastError() << endl;
 		
 	}else{ 
 		tar << 
@@ -206,7 +205,7 @@ bool VesselControl::ServosMoving(){
 
 }
 
-void VesselControl::MoveArm(){
+void VesselControl::MoveArm(double servoSpeed){
 
 		JSsp = JS;
 

@@ -19,7 +19,7 @@ int main() {
 	
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 	while(!Husky.inPosition){
@@ -32,7 +32,7 @@ int main() {
 
 	while(!Husky.grabbed){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(.05);
 	}
 
 	Husky.tarVessel.parts().with_tag("holdDP")[0].docking_port().undock();
@@ -42,7 +42,7 @@ int main() {
 
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 	
@@ -53,7 +53,7 @@ int main() {
 
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 
@@ -66,7 +66,7 @@ int main() {
 
 	while(Husky.vesselCount != 7){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(.03);
 	}
 	Husky.ChangeFocus();
 
@@ -88,7 +88,7 @@ int main() {
 
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 	while(!Husky.inPosition){
@@ -101,7 +101,7 @@ int main() {
 
 	while(!Husky.grabbed){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(0.03);
 	}
 
 	Husky.tarVessel.parts().with_tag("holdDP")[0].docking_port().undock();
@@ -117,7 +117,7 @@ int main() {
 
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 	while(!Husky.inPosition){
@@ -128,7 +128,7 @@ int main() {
 
 	while(Husky.vesselCount != 7){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(.03);
 	}
 
 	Husky.placing = false;
@@ -157,7 +157,7 @@ while(Husky.distanceFromTarget > 14){
 
 	Husky.ResetJSi();
 	Husky.Loop();
-	Husky.MoveArm();
+	Husky.MoveArm(.3);
 	Husky.Loop();
 
 	while(!Husky.inPosition){
@@ -170,7 +170,7 @@ while(Husky.distanceFromTarget > 14){
 
 	while(!Husky.grabbed){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(.03);
 	}
 
 	Husky.tarVessel.parts().with_tag("holdDP")[0].docking_port().undock();
@@ -183,7 +183,10 @@ while(Husky.distanceFromTarget > 14){
 		Husky.Drive(6);
 	}
 
-	Husky.MoveArm();
+	Husky.ResetJSi();
+	Husky.Loop();
+	Husky.MoveArm(.3);
+	Husky.Loop();
 
 	while(!Husky.inPosition){
 		Husky.Loop();
@@ -193,7 +196,7 @@ while(Husky.distanceFromTarget > 14){
 
 	while(Husky.vesselCount != 7){
 		Husky.Loop();
-		Husky.MoveArm();
+		Husky.MoveArm(.03);
 	}
 
 	Husky.placing = false;

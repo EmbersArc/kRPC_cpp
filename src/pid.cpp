@@ -18,6 +18,7 @@ class PIDImpl
         void setKd(double newKd);
         void setMin(double newMin);
         void setMax(double newMax);
+        double lastError();
 
     private:
         double _dt;
@@ -137,6 +138,9 @@ void PIDImpl::setMin(double newMin){
 void PIDImpl::setMax(double newMax){
     _max = newMax;
 }
+double PIDImpl::lastError(){
+    return _error;
+}
 
 
 void PID::setKp(double newKp){
@@ -154,6 +158,10 @@ void PID::setMin(double newMin){
 void PID::setMax(double newMax){
     pimpl->setMax(newMax);
 }
+double PID::lastError(){
+    return pimpl->lastError();
+}
+
 
 PIDImpl::~PIDImpl()
 {

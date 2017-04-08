@@ -29,9 +29,8 @@ class VesselControl{
 		void setDockingPort(string name);
 		void setTarget(string name);
 		void Loop();
-		void MovePlease();
 		void Release();
-		void MoveArm();
+		void MoveArm(double servoSpeed);
 		void Drive(double range);
 		bool ServosMoving();
 		void ResetJSi();
@@ -61,16 +60,17 @@ class VesselControl{
 	private:
 
 		double xcorr, ycorr, zcorr;
-		PID PIDxcorr = PID(1,-1,0.2,0.1,0.1);
-		PID PIDycorr = PID(1,-1,0.2,0.1,0.1);
-		PID PIDzcorr = PID(1,-1,0.2,0.1,0.1);
+		PID PIDxcorr = PID(1,-1,0.05,0.2,0.1);
+		PID PIDycorr = PID(1,-1,0.05,0.2,0.1);
+		PID PIDzcorr = PID(1,-1,0.1,0.4,0.2);
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
-		std::tuple<double,double,double>  DPDirection;
+		std::tuple<double,double,double> DPDirection;
 		std::tuple<double,double,double> TargetPosition, TarPosTF, TarPosDP, TarPos;
 		std::tuple<double,double,double> DPTargetPosition, EECurrentPosition;
 		krpc::Stream<std::vector<krpc::services::SpaceCenter::Vessel>> vessels_stream;
+		krpc::Stream<std::tuple<double,double,double>> ee_pos_stream;
 
 
 		double PI = 4*atan(1);
