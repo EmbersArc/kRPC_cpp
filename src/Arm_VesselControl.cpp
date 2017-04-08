@@ -13,11 +13,11 @@ krpc::services::InfernalRobotics ir(&conn);
 krpc::services::Drawing draw(&conn);
 
 
-VesselControl::VesselControl(string name,string tarname,string dockingportname){
+VesselControl::VesselControl(string name,string tarname,string dpname){
 
-	dpname = dockingportname;
 
 	cout << "Searching for vessel named " << name << endl;
+
 
 	vessel = findVessel(name);
 	tarVessel = findVessel(tarname);
@@ -47,6 +47,7 @@ VesselControl::VesselControl(string name,string tarname,string dockingportname){
 	servo6pos_stream = servo6.position_stream();
 	vessels_stream = sct.vessels_stream();
 	ee_pos_stream = EE.position_stream(ref_frame_vessel);
+	base_pos = Base.position(ref_frame_vessel);
 
 
 	setDockingPort(dpname);
@@ -80,7 +81,7 @@ void VesselControl::Loop(){
 		}
 
 
-		// create distance in docking port reference frame
+		// define position in docking port reference frame
 		if(!grabbed){
 			dpDist = make_tuple(0,-(baseDist - extendDistance),0);
 		}else{
@@ -89,34 +90,35 @@ void VesselControl::Loop(){
 
 		// transform to vessel reference frame
 		TarPosTF = sct.transform_position(dpDist,ref_frame_dockingport,ref_frame_vessel);
+		distanceFromTarget = magnitude(TarPosTF);
+
 
 		// make relative to base link
-		TargetPosition = vectorSubtract(TarPosTF,Base.position(ref_frame_vessel));
-
+		TarPosTF = vectorSubtract(TarPosTF,base_pos);
+		
 		// find EE position relative to base link
-		EECurrentPosition = vectorSubtract(ee_pos_stream(),Base.position(ref_frame_vessel));
+		EECurrentPosition = vectorSubtract(ee_pos_stream(),base_pos);
 
-		// find docking port direction
-		DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
-		distanceFromTarget = magnitude(TarPosTF);
 
 		if(grabbing || placing){
 
-			xcorr = PIDxcorr.calculate(get<0>(TargetPosition), get<0>(EECurrentPosition));
-			ycorr = PIDycorr.calculate(get<1>(TargetPosition), get<1>(EECurrentPosition));
-			zcorr = PIDzcorr.calculate(get<2>(TargetPosition), get<2>(EECurrentPosition));
-
-			TargetPosition = make_tuple(get<0>(TargetPosition) + xcorr, get<1>(TargetPosition) + ycorr, get<2>(TargetPosition) + zcorr);
+			xcorr = PIDxcorr.calculate(get<0>(TarPosTF), get<0>(EECurrentPosition));
+			ycorr = PIDycorr.calculate(get<1>(TarPosTF), get<1>(EECurrentPosition));
+			zcorr = PIDzcorr.calculate(get<2>(TarPosTF), get<2>(EECurrentPosition));
 
 		}else{			
+
 			xcorr = 0;
 			ycorr = 0;
 			zcorr = 0;
-			}
 
-		//draw
+			}
+			
+		TarPosTF = make_tuple(get<0>(TarPosTF) + xcorr, get<1>(TarPosTF) + ycorr, get<2>(TarPosTF) + zcorr);
+		
 		draw.clear();
-		draw.add_line( make_tuple(0,0,0), TarPosTF ,ref_frame_vessel ,true);
+		draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
+
 
 		if( magnitude(TarPosTF) < 10){
 			inRange = true;
@@ -124,6 +126,8 @@ void VesselControl::Loop(){
 			inRange = false;
 		}
 
+	// find docking port direction
+	DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 	
 	//set EE position
 	if(placing || grabbed){
@@ -133,9 +137,9 @@ void VesselControl::Loop(){
 	if( inRange ){
 		tar << 
 			//position
-			-(get<1>(TargetPosition)),		//x
-			(get<0>(TargetPosition)),			//y
-			-(get<2>(TargetPosition)),		//z
+			-(get<1>(TarPosTF)),		//x
+			(get<0>(TarPosTF)),			//y
+			-(get<2>(TarPosTF)),		//z
 			//rotation
 			PI/2 * placing,						
 			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
@@ -262,8 +266,7 @@ void VesselControl::setTarget(string name){
 }
 
 void VesselControl::setDockingPort(string name){
-	dpname = name;
-	dockingPort = tarVessel.parts().with_tag(dpname)[0];
+	dockingPort = tarVessel.parts().with_tag(name)[0];
 	ref_frame_dockingport = dockingPort.docking_port().reference_frame();
 }
 

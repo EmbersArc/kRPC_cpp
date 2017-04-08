@@ -12,9 +12,9 @@ int main() {
 	
 	VesselControl Husky = VesselControl("Husky","Tank","DP");
 
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+	while(Husky.distanceFromTarget > 7 || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive(6);
+		Husky.Drive(4);
 	}
 	
 	Husky.ResetJSi();
