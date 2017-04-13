@@ -47,7 +47,7 @@ VesselControl::VesselControl(string name,string tarname,string dpname){
 	servo6pos_stream = servo6.position_stream();
 	vessels_stream = sct.vessels_stream();
 	ee_pos_stream = EE.position_stream(ref_frame_vessel);
-	base_pos = Base.position(ref_frame_vessel);
+    base_pos = Base.position(ref_frame_vessel);
 
 
 	setDockingPort(dpname);
@@ -75,28 +75,27 @@ void VesselControl::Loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-			extendDistance += 0.004;
+            extendDistance += 0.003;
 		}else{
 			extendDistance = 0;
 		}
 
 
-		// define position in docking port reference frame
+    // define position in docking port reference frame
 		if(!grabbed){
-			dpDist = make_tuple(0,-(baseDist - extendDistance),0);
+            dpDist = make_tuple(0, -(baseDist - extendDistance), 0);
 		}else{
-			dpDist = make_tuple(0,(baseDist - extendDistance),0);
+            dpDist = make_tuple(0, (baseDist - extendDistance), 0);
 		}
 
-		// transform to vessel reference frame
+    // transform to vessel reference frame
 		TarPosTF = sct.transform_position(dpDist,ref_frame_dockingport,ref_frame_vessel);
 		distanceFromTarget = magnitude(TarPosTF);
-		cout << distanceFromTarget << endl ;
 
-		// make relative to base link
+    // make relative to base link
 		TarPosTF = vectorSubtract(TarPosTF,base_pos);
 		
-		// find EE position relative to base link
+    // find EE position relative to base link
 		EECurrentPosition = vectorSubtract(ee_pos_stream(),base_pos);
 
 
@@ -106,86 +105,94 @@ void VesselControl::Loop(){
 			ycorr = PIDycorr.calculate(get<1>(TarPosTF), get<1>(EECurrentPosition));
 			zcorr = PIDzcorr.calculate(get<2>(TarPosTF), get<2>(EECurrentPosition));
 
+            yRotCorr = -PIDyrotcorr.calculate(0,get<0>(EE.direction(ref_frame_surf)));
+
+
 		}else{			
 
-			xcorr = 0;
+            PIDxcorr.reset();
+            PIDycorr.reset();
+            PIDzcorr.reset();
+            PIDyrotcorr.reset();
+            xcorr = 0;
 			ycorr = 0;
 			zcorr = 0;
+            yRotCorr = 0;
 
 			}
 			
-		TarPosTF = make_tuple(get<0>(TarPosTF) + xcorr, get<1>(TarPosTF) + ycorr, get<2>(TarPosTF) + zcorr);
+        TarPosTF = make_tuple(  get<0>(TarPosTF) + xcorr,
+                                get<1>(TarPosTF) + ycorr,
+                                get<2>(TarPosTF) + zcorr    );
 		
-		draw.clear();
+        draw.clear(false);
 		draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
 
 
-		if( magnitude(TarPosTF) < 10){
-			inRange = true;
-		}else{
-			inRange = false;
-		}
+
 
 	// find docking port direction
-	DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
+        DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 	
-	//set EE position
-	if(placing || grabbed){
-		DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
-	}
-	
-	if( inRange ){
-		tar << 
-			//position
-			-(get<1>(TarPosTF)),		//x
-			(get<0>(TarPosTF)),			//y
-			-(get<2>(TarPosTF)),		//z
-			//rotation
-			PI/2 * placing,						
-			-atan2(get<2>(DPDirection),get<1>(DPDirection)),						
-			-atan2(get<0>(DPDirection),get<1>(DPDirection));
-
-			// cout << PIDxcorr.lastError() << "    " << PIDycorr.lastError() << "    " << PIDzcorr.lastError() << endl;
-		
-	}else{ 
-		tar << 
-			//position
-			0,		//x
-			0,		//y
-			5,		//z
-			//rotation
-			0,		//x
-			0,		//y
-			0;		//z
-	}
-
-	if(resetJSi){
-		JSi << 0,0,0,0,0,0;
-		resetJSi = false;
-	}else{
-		JSi << 	servo1pos_stream(),
-				servo2pos_stream(),
-				servo3pos_stream(),
-				servo4pos_stream(),
-				servo5pos_stream(),
-				servo6pos_stream();
-	}
-
-	JScurr << 	servo1pos_stream(),
-				servo2pos_stream(),
-				servo3pos_stream(),
-				servo4pos_stream(),
-				servo5pos_stream(),
-				servo6pos_stream();
-
-		JS = CalculatePositions(tar,JSi,true,true);
+    // invert DPDirection
+        if(grabbed){
+            DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
+        }
 
 
-		if( !ServosMoving() ){
-			inPosition = true;
-		}else{
-			inPosition = false;
-		}
+    if( magnitude(TarPosTF) < 10){
+            inRange = true;
+        }else{
+            inRange = false;
+        }
+
+    tar <<
+        //position
+        -(get<1>(TarPosTF)),		//x
+        (get<0>(TarPosTF)),			//y
+        -(get<2>(TarPosTF)),		//z
+        //rotation
+        PI/2 * placing,
+        -atan2(get<2>(DPDirection),get<1>(DPDirection)) + yRotCorr,
+        -atan2(get<0>(DPDirection),get<1>(DPDirection));
+
+    if(resetJSi){
+
+        JSi << 0,0,0,0,0,0;
+        resetJSi = false;
+
+    }else{
+
+        JSi << 	servo1pos_stream(),
+                servo2pos_stream(),
+                servo3pos_stream(),
+                servo4pos_stream(),
+                servo5pos_stream(),
+                servo6pos_stream();
+
+        }
+
+    JS = CalculatePositions(tar,JSi,true,true);
+
+
+    if( JS(0) != 999 ){
+
+        inRange = true;
+
+    }else{
+
+        inRange = false;
+        JS << 0,0,-140,140,0,0;
+
+    }
+
+
+
+    if( !ServosMoving() ){
+        inPosition = true;
+    }else{
+        inPosition = false;
+    }
 
 
 }
@@ -266,7 +273,7 @@ void VesselControl::setTarget(string name){
 }
 
 void VesselControl::setDockingPort(string name){
-	dockingPort = tarVessel.parts().with_tag(name)[0];
+    dockingPort = tarVessel.parts().with_tag(name)[0];
 	ref_frame_dockingport = dockingPort.docking_port().reference_frame();
 }
 

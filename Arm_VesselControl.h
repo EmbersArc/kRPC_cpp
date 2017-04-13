@@ -60,9 +60,12 @@ class VesselControl{
 	private:
 
 		double xcorr, ycorr, zcorr;
-		PID PIDxcorr = PID(1,-1,0.15,0.2,0.1);
-		PID PIDycorr = PID(1,-1,0.15,0.2,0.1);
-		PID PIDzcorr = PID(1,-1,0.15,0.2,0.1);
+        double yRotCorr = 0;
+        double zRotCorr = 0;
+        PID PIDxcorr = PID(1,-1,0.1,0.5,0.1);
+        PID PIDycorr = PID(1,-1,0.1,0.5,0.1);
+        PID PIDzcorr = PID(1,-1,0.2,0.5,0.1);
+        PID PIDyrotcorr = PID(1,-1,0.1,0.5,0.1);
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
@@ -79,7 +82,6 @@ class VesselControl{
 		krpc::services::SpaceCenter::Vessel findVessel(string name);
 
 		Vector6d JSi; 	//Joint space coordinates initial
-		Vector6d JScurr; 	//Joint space coordinates current
 		Vector6d JSsp; 	//Joint space coordinates current
 		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates

@@ -32,7 +32,7 @@ Vector2d CalculateWheelTorque(std::tuple<double,double,double> PosSP,double spee
         speedAdjust = 0;
     }
 
-    if( abs(speed) > 0.7 || distError < range){
+    if( abs(speed) > 1 || distError < range){
         speedAdjust = 0;
     }
 

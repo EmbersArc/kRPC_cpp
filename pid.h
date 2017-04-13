@@ -12,6 +12,7 @@ class PID
         void setKd(double newKd);
         void setMin(double newMin);
         void setMax(double newMax);
+        void reset();
         double lastError();
 
         // Returns the manipulated variable given a setpoint and current process value
