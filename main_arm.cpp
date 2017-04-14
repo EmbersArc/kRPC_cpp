@@ -30,7 +30,7 @@ int main() {
 
 	while(!Husky.grabbed){
 		Husky.Loop();
-		Husky.MoveArm(.1);
+        Husky.MoveArm(.2);
 	}
 
     Husky.baseDist = 3;
@@ -67,7 +67,7 @@ int main() {
 
 	while(Husky.vesselCount != 7){
 		Husky.Loop();
-		Husky.MoveArm(.1);
+        Husky.MoveArm(.2);
 	}
 	Husky.ChangeFocus();
 
@@ -101,7 +101,7 @@ int main() {
 
     while(!Husky.grabbed){
         Husky.Loop();
-        Husky.MoveArm(.1);
+        Husky.MoveArm(.2);
     }
 
     Husky.tarVessel.parts().with_tag("DP")[0].docking_port().undock();
@@ -112,7 +112,7 @@ int main() {
     Husky.baseDist = 15;
 	Husky.Loop();
 
-    while(Husky.distanceFromTarget > 4 || Husky.speed_stream() > 0.02){
+    while(Husky.distanceFromTarget > 5 || Husky.speed_stream() > 0.02){
         Husky.Loop();
         Husky.Drive(2);
     }

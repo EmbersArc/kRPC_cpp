@@ -62,10 +62,10 @@ class VesselControl{
 		double xcorr, ycorr, zcorr;
         double yRotCorr = 0;
         double zRotCorr = 0;
-        PID PIDxcorr = PID(1,-1,0.1,0.5,0.1);
-        PID PIDycorr = PID(1,-1,0.1,0.5,0.1);
-        PID PIDzcorr = PID(1,-1,0.2,0.5,0.1);
-        PID PIDyrotcorr = PID(1,-1,0.1,0.5,0.1);
+        PID PIDxcorr = PID(1,-1,0.2,0.2,0.4);
+        PID PIDycorr = PID(1,-1,0.2,0.2,0.4);
+        PID PIDzcorr = PID(1,-1,0.3,0.2,0.4);
+        PID PIDyrotcorr = PID(1,-1,0.2,0.3,0.5);
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;

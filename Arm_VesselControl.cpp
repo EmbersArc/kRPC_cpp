@@ -75,7 +75,7 @@ void VesselControl::Loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-            extendDistance += 0.003;
+            extendDistance += 0.001;
 		}else{
 			extendDistance = 0;
 		}
@@ -182,7 +182,7 @@ void VesselControl::Loop(){
     }else{
 
         inRange = false;
-        JS << 0,0,-140,140,0,0;
+        JS << 0,0,-140,145,0,0;
 
     }
 
@@ -226,11 +226,11 @@ void VesselControl::MoveArm(double servoSpeed){
 
 		JSsp = JS;
 
-		servo1.move_to(JS(0),3*servoSpeed);
-		servo2.move_to(JS(1),3*servoSpeed);
-		servo3.move_to(JS(2),3*servoSpeed);
-		servo4.move_to(JS(3),6*servoSpeed);
-		servo5.move_to(JS(4),6*servoSpeed);
+        servo1.move_to(JS(0),5*servoSpeed);
+        servo2.move_to(JS(1),5*servoSpeed);
+        servo3.move_to(JS(2),5*servoSpeed);
+        servo4.move_to(JS(3),10*servoSpeed);
+        servo5.move_to(JS(4),10*servoSpeed);
 		servo6.move_to(JS(5),15*servoSpeed);
 
 }
