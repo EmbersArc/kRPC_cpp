@@ -75,7 +75,7 @@ void VesselControl::Loop(){
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-            extendDistance += 0.001;
+            extendDistance += 0.007;
 		}else{
 			extendDistance = 0;
 		}
@@ -97,15 +97,23 @@ void VesselControl::Loop(){
 		
     // find EE position relative to base link
 		EECurrentPosition = vectorSubtract(ee_pos_stream(),base_pos);
-
+    // find docking port direction
+        DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 
 		if(grabbing || placing){
 
-			xcorr = PIDxcorr.calculate(get<0>(TarPosTF), get<0>(EECurrentPosition));
-			ycorr = PIDycorr.calculate(get<1>(TarPosTF), get<1>(EECurrentPosition));
-			zcorr = PIDzcorr.calculate(get<2>(TarPosTF), get<2>(EECurrentPosition));
+            xcorr = PIDxcorr.calculate(get<0>(TarPosTF), get<0>(EECurrentPosition));
+            ycorr = PIDycorr.calculate(get<1>(TarPosTF), get<1>(EECurrentPosition));
+            zcorr = PIDzcorr.calculate(get<2>(TarPosTF), get<2>(EECurrentPosition));
 
-            yRotCorr = -PIDyrotcorr.calculate(0,get<0>(EE.direction(ref_frame_surf)));
+//            xcorr = PIDxcorr.calculate(0, get<0>(EE.position(ref_frame_dockingport)));
+//            ycorr = PIDycorr.calculate(0, get<1>(EE.position(ref_frame_dockingport)));
+//            zcorr = PIDzcorr.calculate(0, get<2>(EE.position(ref_frame_dockingport)));
+
+
+
+            yRotCorr = -PIDyrotcorr.calculate(0, get<2>(EE.direction(ref_frame_dockingport)));
+            zRotCorr = -PIDzrotcorr.calculate(0, get<0>(EE.direction(ref_frame_dockingport)));
 
 
 		}else{			
@@ -118,33 +126,29 @@ void VesselControl::Loop(){
 			ycorr = 0;
 			zcorr = 0;
             yRotCorr = 0;
+            zRotCorr = 0;
 
 			}
 			
-        TarPosTF = make_tuple(  get<0>(TarPosTF) + xcorr,
-                                get<1>(TarPosTF) + ycorr,
-                                get<2>(TarPosTF) + zcorr    );
-		
-        draw.clear(false);
-		draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
-
-
-
-
-	// find docking port direction
-        DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
-	
     // invert DPDirection
         if(grabbed){
             DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
         }
 
 
-    if( magnitude(TarPosTF) < 10){
-            inRange = true;
-        }else{
-            inRange = false;
-        }
+//    if( magnitude(TarPosTF) < 10){
+//            inRange = true;
+//        }else{
+//            inRange = false;
+//        }
+
+
+    get<0>(TarPosTF) += xcorr;
+    get<1>(TarPosTF) += ycorr;
+    get<2>(TarPosTF) += zcorr;
+
+    draw.clear(false);
+    draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
 
     tar <<
         //position
@@ -153,8 +157,8 @@ void VesselControl::Loop(){
         -(get<2>(TarPosTF)),		//z
         //rotation
         PI/2 * placing,
-        -atan2(get<2>(DPDirection),get<1>(DPDirection)) + yRotCorr,
-        -atan2(get<0>(DPDirection),get<1>(DPDirection));
+        -atan2(get<2>(DPDirection),get<1>(DPDirection)) - yRotCorr,
+        -atan2(get<0>(DPDirection),get<1>(DPDirection)) + zRotCorr;
 
     if(resetJSi){
 
@@ -223,8 +227,6 @@ bool VesselControl::ServosMoving(){
 }
 
 void VesselControl::MoveArm(double servoSpeed){
-
-		JSsp = JS;
 
         servo1.move_to(JS(0),5*servoSpeed);
         servo2.move_to(JS(1),5*servoSpeed);
