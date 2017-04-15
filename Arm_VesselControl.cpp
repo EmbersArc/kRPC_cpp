@@ -26,7 +26,6 @@ VesselControl::VesselControl(string name,string tarname,string dpname){
 	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
 	// Claw = tarVessel.parts().with_tag("Claw")[0]; 		//the base joint
 
-
 	ref_frame_surf = vessel.surface_reference_frame();
 	ref_frame_vessel = vessel.reference_frame();
 	ref_frame = vessel.orbit().body().reference_frame();
@@ -64,6 +63,7 @@ void VesselControl::Loop(){
 
 	//check if grabbed
 		if (EE.modules()[1].get_field("State") != "Idle"){
+
 			grabbing = false;
 			if(!placing){
 				extendDistance = 0;
@@ -97,24 +97,22 @@ void VesselControl::Loop(){
 		
     // find EE position relative to base link
 		EECurrentPosition = vectorSubtract(ee_pos_stream(),base_pos);
+
     // find docking port direction
         DPDirection = dockingPort.docking_port().direction(ref_frame_vessel);
 
 		if(grabbing || placing){
 
+            cout << get<0>(TarPosTF) - get<0>(EECurrentPosition) << endl;
+            cout << get<1>(TarPosTF) - get<1>(EECurrentPosition) << endl;
+            cout << get<2>(TarPosTF) - get<2>(EECurrentPosition) << endl << endl;
+
             xcorr = PIDxcorr.calculate(get<0>(TarPosTF), get<0>(EECurrentPosition));
             ycorr = PIDycorr.calculate(get<1>(TarPosTF), get<1>(EECurrentPosition));
             zcorr = PIDzcorr.calculate(get<2>(TarPosTF), get<2>(EECurrentPosition));
 
-//            xcorr = PIDxcorr.calculate(0, get<0>(EE.position(ref_frame_dockingport)));
-//            ycorr = PIDycorr.calculate(0, get<1>(EE.position(ref_frame_dockingport)));
-//            zcorr = PIDzcorr.calculate(0, get<2>(EE.position(ref_frame_dockingport)));
-
-
-
             yRotCorr = -PIDyrotcorr.calculate(0, get<2>(EE.direction(ref_frame_dockingport)));
             zRotCorr = -PIDzrotcorr.calculate(0, get<0>(EE.direction(ref_frame_dockingport)));
-
 
 		}else{			
 
@@ -122,6 +120,7 @@ void VesselControl::Loop(){
             PIDycorr.reset();
             PIDzcorr.reset();
             PIDyrotcorr.reset();
+            PIDzrotcorr.reset();
             xcorr = 0;
 			ycorr = 0;
 			zcorr = 0;
@@ -134,13 +133,6 @@ void VesselControl::Loop(){
         if(grabbed){
             DPDirection = make_tuple(-get<0>(DPDirection),-get<1>(DPDirection),-get<2>(DPDirection));
         }
-
-
-//    if( magnitude(TarPosTF) < 10){
-//            inRange = true;
-//        }else{
-//            inRange = false;
-//        }
 
 
     get<0>(TarPosTF) += xcorr;
@@ -156,11 +148,11 @@ void VesselControl::Loop(){
         (get<0>(TarPosTF)),			//y
         -(get<2>(TarPosTF)),		//z
         //rotation
-        PI/2 * placing,
+        PI/2 * rotPlease,
         -atan2(get<2>(DPDirection),get<1>(DPDirection)) - yRotCorr,
         -atan2(get<0>(DPDirection),get<1>(DPDirection)) + zRotCorr;
 
-    if(resetJSi){
+    if(true){
 
         JSi << 0,0,0,0,0,0;
         resetJSi = false;
@@ -186,7 +178,7 @@ void VesselControl::Loop(){
     }else{
 
         inRange = false;
-        JS << 0,0,-140,145,0,0;
+        JS << 0,20,-160,140,0,0;
 
     }
 
@@ -203,6 +195,7 @@ void VesselControl::Loop(){
 
 void VesselControl::Release(){
 	EE.modules()[1].set_action("Detach",true);
+    placing = false;
 }
 
 void VesselControl::ResetJSi(){

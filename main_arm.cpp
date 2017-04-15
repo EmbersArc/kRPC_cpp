@@ -62,6 +62,7 @@ int main() {
 		Husky.Loop();
 	}
 
+    Husky.rotPlease = true;
 
 	Husky.placing = true;
 
@@ -70,9 +71,11 @@ int main() {
         Husky.MoveArm(.2);
 	}
 	Husky.ChangeFocus();
+    Husky.rotPlease = false;
 
-	Husky.placing = false;
 	Husky.Release();
+    Husky.Loop();
+    Husky.MoveArm(.3);
 
 
 // // next part
@@ -83,9 +86,9 @@ int main() {
 	Husky.Loop();
 
 
-    while(Husky.distanceFromTarget > 8 || Husky.speed_stream() > 0.02){
+    while(Husky.distanceFromTarget > 7 || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-        Husky.Drive(6);
+        Husky.Drive(5);
 	}
 
     Husky.ResetJSi();
@@ -109,20 +112,23 @@ int main() {
 
 	Husky.setTarget("Tower");
 	Husky.setDockingPort("TankLowerDP");
-    Husky.baseDist = 12;
+    Husky.baseDist = 7;
 	Husky.Loop();
+    Husky.MoveArm(.2);
 
-    while(Husky.distanceFromTarget > 5 || Husky.speed_stream() > 0.02){
+    sleep(2);
+
+    while(Husky.distanceFromTarget > 10){
         Husky.Loop();
-        Husky.Drive(2);
+        Husky.Drive(0.1);
     }
 
     Husky.baseDist = 2;
     Husky.Loop();
 
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+    while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-        Husky.Drive(5);
+        Husky.Drive(4);
 	}
 
 	Husky.ResetJSi();
@@ -134,18 +140,26 @@ int main() {
 		Husky.Loop();
 	}
 
-	Husky.placing = true;
+    Husky.placing = true;
 
-	while(Husky.vesselCount != 7){
-		Husky.Loop();
-		Husky.MoveArm(.03);
-	}
+    while(Husky.vesselCount != 7){
+        Husky.Loop();
+        Husky.MoveArm(.04);
+    }
+    Husky.Release();
 
-	Husky.placing = false;
-	Husky.Release();
+    Husky.baseDist = 5;
+    Husky.placing = true;
+    Husky.Loop();
+    Husky.MoveArm(.1);
+    Husky.baseDist = 2;
+    Husky.placing = false;
 
-// next part
+    Husky.Loop();
+    Husky.MoveArm(.3);
+    sleep(2);
 
+// // next part
 
 	Husky.setTarget("Tank");
 	Husky.setDockingPort("holdDP");
@@ -164,7 +178,7 @@ while(Husky.distanceFromTarget > 14){
 
 	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
 		Husky.Loop();
-		Husky.Drive(6);
+        Husky.Drive(4);
 	}
 
 	Husky.ResetJSi();
@@ -178,24 +192,32 @@ while(Husky.distanceFromTarget > 14){
 
 	Husky.grabbing = true;
 
-	cout << "grabbing" << endl;
-
 	while(!Husky.grabbed){
 		Husky.Loop();
 		Husky.MoveArm(.03);
 	}
 
-	Husky.tarVessel.parts().with_tag("holdDP")[0].docking_port().undock();
+    Husky.tarVessel.parts().with_tag("DP")[0].docking_port().undock();
 
 	Husky.setTarget("Tower");
 	Husky.setDockingPort("TankUpperDP");
 	Husky.Loop();
 
+    Husky.baseDist = 10;
+    Husky.Loop();
 
-	while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
-		Husky.Loop();
-		Husky.Drive(6);
-	}
+    while(Husky.distanceFromTarget > 6 || Husky.speed_stream() > 0.02){
+        Husky.Loop();
+        Husky.Drive(3);
+    }
+
+    Husky.baseDist = 2;
+    Husky.Loop();
+
+    while(Husky.distanceFromTarget > 5){
+        Husky.Loop();
+        Husky.Drive(0.1);
+    }
 
 	Husky.ResetJSi();
 	Husky.Loop();
@@ -213,9 +235,9 @@ while(Husky.distanceFromTarget > 14){
 		Husky.MoveArm(.03);
 	}
 
-	Husky.placing = false;
 	Husky.Release();
-
+    Husky.Loop();
+    Husky.MoveArm(.3);
 
 	// yay
 	cout << "----DONE----" << endl;

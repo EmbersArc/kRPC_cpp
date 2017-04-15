@@ -46,6 +46,7 @@ class VesselControl{
 		bool inRange = false;
 		bool inPosition = false;
 		bool resetJSi = false;
+        bool rotPlease = false;
 		krpc::Stream<double> speed_stream;
 		int vesselCount;
 		double extendDistance = 0;
@@ -62,11 +63,12 @@ class VesselControl{
 		double xcorr, ycorr, zcorr;
         double yRotCorr = 0;
         double zRotCorr = 0;
-        PID PIDxcorr = PID(1,-1,0.2,1,0);
-        PID PIDycorr = PID(1,-1,0.2,1,0);
-        PID PIDzcorr = PID(1,-1,0.2,1,0);
-        PID PIDyrotcorr = PID(1,-1,0.2,1,0);
-        PID PIDzrotcorr = PID(1,-1,0.2,1,0);
+        PID PIDxcorr = PID(2,-2,0.2,1,0);
+        PID PIDycorr = PID(2,-2,0.2,1,0);
+        PID PIDzcorr = PID(2,-2,0.2,1.5,0);
+        PID PIDyrotcorr = PID(2,-2,0.2,1,0);
+        PID PIDzrotcorr = PID(2,-2,0.2,1,0);
+        bool dontGrabNow;
 
 		krpc::services::SpaceCenter::Part dockingPort;
 		string dpname;
