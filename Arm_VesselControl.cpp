@@ -24,7 +24,6 @@ VesselControl::VesselControl(string name,string tarname,string dpname){
 
 	EE = vessel.parts().with_tag("EE")[0]; 			//the end effector
 	Base = vessel.parts().with_tag("Base")[0]; 		//the base joint
-	// Claw = tarVessel.parts().with_tag("Claw")[0]; 		//the base joint
 
 	ref_frame_surf = vessel.surface_reference_frame();
 	ref_frame_vessel = vessel.reference_frame();
@@ -63,27 +62,32 @@ void VesselControl::Loop(){
 
 	//check if grabbed
 		if (EE.modules()[1].get_field("State") != "Idle"){
+//            if( abs(difftime(time(0),releaseTime)) < 3 ){
+//                cout << difftime(time(0),releaseTime) << endl;
+//                Release();
+//                grabbed = false;
+//             }
 
 			grabbing = false;
 			if(!placing){
 				extendDistance = 0;
 			}
-			grabbed = true;
+            grabbed = true;
 		}else{
 			grabbed = false;
 		}
 
 	//check if grabbing or placing
 		if(grabbing || placing){
-            extendDistance += 0.007;
+            extendDistance += 0.008;
 		}else{
 			extendDistance = 0;
 		}
 
 
     // define position in docking port reference frame
-		if(!grabbed){
-            dpDist = make_tuple(0, -(baseDist - extendDistance), 0);
+        if(grabbed){        //!
+            dpDist = make_tuple(0, -(baseDist + extendDistance), 0);
 		}else{
             dpDist = make_tuple(0, (baseDist - extendDistance), 0);
 		}
@@ -139,8 +143,8 @@ void VesselControl::Loop(){
     get<1>(TarPosTF) += ycorr;
     get<2>(TarPosTF) += zcorr;
 
-    draw.clear(false);
-    draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
+//    draw.clear(false);
+//    draw.add_line( base_pos, vectorAdd(TarPosTF,base_pos) ,ref_frame_vessel , true);
 
     tar <<
         //position
@@ -148,13 +152,13 @@ void VesselControl::Loop(){
         (get<0>(TarPosTF)),			//y
         -(get<2>(TarPosTF)),		//z
         //rotation
-        PI/2 * rotPlease,
+        PI/6 * rotPlease,
         -atan2(get<2>(DPDirection),get<1>(DPDirection)) - yRotCorr,
-        -atan2(get<0>(DPDirection),get<1>(DPDirection)) + zRotCorr;
+        -atan2(get<0>(DPDirection),get<1>(DPDirection)) + zRotCorr; //+
 
     if(true){
 
-        JSi << 0,0,0,0,0,0;
+        JSi << 0,20,-160,140,0,200;
         resetJSi = false;
 
     }else{
@@ -178,7 +182,9 @@ void VesselControl::Loop(){
     }else{
 
         inRange = false;
-        JS << 0,20,-160,140,0,0;
+//        JS << 0,20,-160,140,0,0;
+//        JS << 0,-20,-100,125,0,45;
+        JS << -20,-8,-87,-83,163,45;
 
     }
 
@@ -196,6 +202,7 @@ void VesselControl::Loop(){
 void VesselControl::Release(){
 	EE.modules()[1].set_action("Detach",true);
     placing = false;
+    releaseTime = time(0);
 }
 
 void VesselControl::ResetJSi(){
@@ -203,7 +210,7 @@ void VesselControl::ResetJSi(){
 }
 
 void VesselControl::ChangeFocus(){
-		sct.set_active_vessel(vessel);
+        sct.set_active_vessel(findVessel("Tower"));
 }
 
 bool VesselControl::ServosMoving(){

@@ -15,6 +15,7 @@
 #include "IKSolver.h"
 #include "CalculateWheelTorque.h"
 #include "pid.h"
+#include <ctime>
 
 using namespace std;
 	
@@ -55,17 +56,18 @@ class VesselControl{
 		krpc::services::SpaceCenter::Vessel vessel;
 		krpc::services::SpaceCenter::Vessel tarVessel;
 		// krpc::services::SpaceCenter::Part Claw; 		//the claw joint
+        Vector6d JS; 	//Joint space coordinates
 
 
 	
 	private:
-
+        time_t releaseTime = time(0);
 		double xcorr, ycorr, zcorr;
         double yRotCorr = 0;
         double zRotCorr = 0;
-        PID PIDxcorr = PID(2,-2,0.2,1,0);
-        PID PIDycorr = PID(2,-2,0.2,1,0);
-        PID PIDzcorr = PID(2,-2,0.2,1.5,0);
+        PID PIDxcorr = PID(2,-2,0.2,.7,0);
+        PID PIDycorr = PID(2,-2,0.2,.7,0);
+        PID PIDzcorr = PID(2,-2,0.2,.7,0);
         PID PIDyrotcorr = PID(2,-2,0.2,1,0);
         PID PIDzrotcorr = PID(2,-2,0.2,1,0);
         bool dontGrabNow;
@@ -85,7 +87,6 @@ class VesselControl{
 		krpc::services::SpaceCenter::Vessel findVessel(string name);
 
 		Vector6d JSi; 	//Joint space coordinates initial
-		Vector6d JS; 	//Joint space coordinates
 		Vector6d tar;	//target OS coordinates
 
 		krpc::services::SpaceCenter::ReferenceFrame ref_frame_surf;
